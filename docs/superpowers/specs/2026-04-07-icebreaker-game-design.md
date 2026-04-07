@@ -105,7 +105,7 @@ All phase transitions are host-controlled. The host drives the pace.
 
 **Over the full game:** A balanced $100 investment across 7 events returns roughly $180-250 total, making full investment the winning long-term strategy. Negative multipliers are mild (-0.5 to -1.5) so even unlucky investors recover.
 
-**Team scoring:** A team's score is the sum of all player wallet balances on that team. This means every player's investment decisions contribute to the team outcome — no one can coast. Teams with more members have a natural advantage in raw score, but since team sizes are self-selected in the lobby, this is a visible tradeoff (join the big team for safety, or the small team for glory).
+**Team scoring:** A team's score is the **average** wallet balance across all players on that team. This keeps competition fair regardless of team size — a 3-person team and an 8-person team compete on equal footing. Every player's decisions still matter since one bad allocation drags down the team average.
 
 ## Event Deck
 
