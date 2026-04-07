@@ -17,6 +17,7 @@ eggs/
 lib/
 lib64/
 !src/lib/
+!__tests__/lib/
 parts/
 sdist/
 var/
