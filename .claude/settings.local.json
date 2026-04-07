@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash:*)",
+      "Bash(cp -r \"/c/Users/Danny/OneDrive/Desktop/Spring 2026 Semester/class-game-temp/src\" \"/c/Users/Danny/OneDrive/Desktop/Spring 2026 Semester/class-game/\")",
+      "Bash(cp \"/c/Users/Danny/OneDrive/Desktop/Spring 2026 Semester/class-game-temp/package.json\" \"/c/Users/Danny/OneDrive/Desktop/Spring 2026 Semester/class-game/\")",
+      "Bash(cp \"/c/Users/Danny/OneDrive/Desktop/Spring 2026 Semester/class-game-temp/package-lock.json\" \"/c/Users/Danny/OneDrive/Desktop/Spring 2026 Semester/class-game/\")",
+      "Bash(cp \"/c/Users/Danny/OneDrive/Desktop/Spring 2026 Semester/class-game-temp/tsconfig.json\" \"/c/Users/Danny/OneDrive/Desktop/Spring 2026 Semester/class-game/\")",
+      "Bash(cp \"/c/Users/Danny/OneDrive/Desktop/Spring 2026 Semester/class-game-temp/next.config.ts\" \"/c/Users/Danny/OneDrive/Desktop/Spring 2026 Semester/class-game/\")",
+      "Bash(rm:*)",
+      "Bash(mkdir -p \"/c/Users/Danny/OneDrive/Desktop/Spring 2026 Semester/class-game/src/app/api/games/[roomCode]/advance\")",
+      "Bash(mkdir -p \"/c/Users/Danny/OneDrive/Desktop/Spring 2026 Semester/class-game/src/app/api/games/[roomCode]/scores\")"
+    ]
+  }
+}
