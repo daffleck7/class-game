@@ -2,7 +2,7 @@
 
 ## Overview
 
-An interactive classroom icebreaker game where 15-40 students join from their phones via QR code, allocate a $100 budget across business categories, and compete as random events reward or penalize their investment strategies. Kahoot-style UX: phones are controllers, a shared screen is the stage.
+An interactive classroom icebreaker game where 15-40 students join from their phones via QR code, pick a team (1-5), allocate a $100 budget across business categories, and compete as random events reward or penalize their investment strategies. Players compete individually but are grouped into teams — the primary competition is team vs team, with individual MVPs highlighted. Kahoot-style UX: phones are controllers, a shared screen is the stage.
 
 **Setting:** College classroom, first day of a course.
 **Duration:** ~10 minutes per game session.
@@ -33,8 +33,8 @@ Players can allocate any amount (including $0) to any category. Unallocated mone
 
 ### Phase 1: Lobby
 
-- **Host screen:** Game title, QR code, room code, live list of player names as they join. "Start Game" button appears when 2+ players have joined.
-- **Player screen:** Name entry form. After submitting: "Waiting for host to start..." with their name displayed.
+- **Host screen:** Game title, QR code, room code, and a live roster of player names grouped by team (Teams 1-5). "Start Game" button appears when 2+ players have joined.
+- **Player screen:** Name entry form + team dropdown (Team 1 through Team 5). After submitting: "Waiting for host to start..." with their name and team displayed.
 
 ### Phase 2: Allocation
 
@@ -43,13 +43,13 @@ Players can allocate any amount (including $0) to any category. Unallocated mone
 
 ### Phase 3: Events
 
-- **Host screen:** Events reveal one at a time — title, description, then the effect. Leaderboard animates after each event. Host clicks "Next Event" to advance.
-- **Player screen:** Current event displayed with their personal gain/loss for that round. Running wallet balance updates in real time.
+- **Host screen:** Events reveal one at a time — title, description, then the effect. **Team leaderboard** animates after each event (team scores = sum of all player wallets on that team). Host clicks "Next Event" to advance.
+- **Player screen:** Current event displayed with their personal gain/loss for that round. Running wallet balance and team rank update in real time.
 
 ### Phase 4: Final
 
-- **Host screen:** Final leaderboard with top 3 highlighted. Game over.
-- **Player screen:** Their final rank and wallet balance.
+- **Host screen:** Final **team leaderboard** with winning team highlighted. Below, show the **overall MVP** (top individual scorer) and the **top scorer from each team**. Game over.
+- **Player screen:** Their team's final rank, their personal rank within their team, and their wallet balance.
 
 All phase transitions are host-controlled. The host drives the pace.
 
@@ -74,6 +74,7 @@ All phase transitions are host-controlled. The host drives the pace.
 | `id` | uuid (PK) | Auto-generated |
 | `game_id` | uuid (FK → games) | Which game they belong to |
 | `name` | text | Display name |
+| `team` | int | Team number (1-5) |
 | `allocations` | jsonb | `{"rd": 20, "security": 30, "compatibility": 10, "marketing": 25, "partnerships": 15}` |
 | `cash` | int | Unallocated budget kept in wallet |
 | `score` | int | Running wallet balance (starts at cash kept after allocation) |
@@ -103,6 +104,8 @@ All phase transitions are host-controlled. The host drives the pace.
 **Initial score:** `100 - total_invested + 0 = cash kept`. A player who invests $80 starts at wallet $20. A player who invests $0 starts at wallet $100.
 
 **Over the full game:** A balanced $100 investment across 7 events returns roughly $180-250 total, making full investment the winning long-term strategy. Negative multipliers are mild (-0.5 to -1.5) so even unlucky investors recover.
+
+**Team scoring:** A team's score is the sum of all player wallet balances on that team. This means every player's investment decisions contribute to the team outcome — no one can coast. Teams with more members have a natural advantage in raw score, but since team sizes are self-selected in the lobby, this is a visible tradeoff (join the big team for safety, or the small team for glory).
 
 ## Event Deck
 
@@ -157,7 +160,8 @@ class-game/
 │   └── components/
 │       ├── host/                   # Host-screen phase components
 │       ├── player/                 # Player-screen phase components
-│       ├── Leaderboard.tsx
+│       ├── TeamLeaderboard.tsx  # Team rankings (primary leaderboard)
+│       ├── PlayerMVPs.tsx       # Top individual scorers + per-team MVPs
 │       ├── QRCode.tsx
 │       └── AllocationSliders.tsx
 ├── supabase/
