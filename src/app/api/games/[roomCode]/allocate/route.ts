@@ -1,10 +1,9 @@
 /**
  * POST /api/games/[roomCode]/allocate
  *
- * Accepts a player's budget allocations across the 5 categories,
- * validates the totals, and persists them to the database.
- * During initial allocation: budget is $100.
- * During reallocation (playing phase): budget is the player's current score.
+ * During initial allocation: sets investments from $100 budget. Score = remaining cash.
+ * During reinvest (playing phase): adds to existing investments from available cash.
+ * Investments persist — this endpoint only adds, never removes.
  */
 
 import { NextResponse } from "next/server";
@@ -34,7 +33,7 @@ export async function POST(
     }
   }
 
-  const totalInvested = CATEGORIES.reduce((sum, cat) => sum + body.allocations[cat], 0);
+  const totalToInvest = CATEGORIES.reduce((sum, cat) => sum + body.allocations[cat], 0);
 
   const supabase = createServerClient();
 
@@ -52,30 +51,21 @@ export async function POST(
     return NextResponse.json({ error: "Cannot allocate in this phase" }, { status: 400 });
   }
 
-  const isReallocation = game.status === "playing";
-
-  if (isReallocation) {
-    const { data: currentPlayer } = await supabase
-      .from("players")
-      .select("score")
-      .eq("id", body.player_id)
-      .single();
-
-    const budget = currentPlayer?.score ?? 100;
-    if (totalInvested > budget) {
-      return NextResponse.json(
-        { error: `Total allocations exceed your wallet balance of $${budget}` },
-        { status: 400 }
-      );
+  // Initial allocation: set investments, score = cash = 100 - invested
+  if (game.status === "allocating") {
+    if (totalToInvest > 100) {
+      return NextResponse.json({ error: "Total allocations exceed $100" }, { status: 400 });
     }
 
-    const cash = budget - totalInvested;
+    const cash = 100 - totalToInvest;
 
     const { data: player, error: playerError } = await supabase
       .from("players")
       .update({
         allocations: body.allocations,
         cash,
+        score: cash,
+        locked_in: true,
       })
       .eq("id", body.player_id)
       .select()
@@ -88,20 +78,38 @@ export async function POST(
     return NextResponse.json({ score: player.score, cash: player.cash, locked_in: true });
   }
 
-  // Initial allocation: budget is $100
-  if (totalInvested > 100) {
-    return NextResponse.json({ error: "Total allocations exceed $100" }, { status: 400 });
+  // Reinvest: add to existing investments from available cash
+  const { data: currentPlayer, error: fetchError } = await supabase
+    .from("players")
+    .select("allocations, cash")
+    .eq("id", body.player_id)
+    .single();
+
+  if (fetchError || !currentPlayer) {
+    return NextResponse.json({ error: "Player not found" }, { status: 404 });
   }
 
-  const cash = 100 - totalInvested;
+  if (totalToInvest > currentPlayer.cash) {
+    return NextResponse.json(
+      { error: `Total exceeds available cash of $${currentPlayer.cash}` },
+      { status: 400 }
+    );
+  }
+
+  const oldAllocations = currentPlayer.allocations as Record<Category, number>;
+  const newAllocations: Record<string, number> = {};
+  for (const cat of CATEGORIES) {
+    newAllocations[cat] = (oldAllocations[cat] || 0) + body.allocations[cat];
+  }
+
+  const newCash = currentPlayer.cash - totalToInvest;
 
   const { data: player, error: playerError } = await supabase
     .from("players")
     .update({
-      allocations: body.allocations,
-      cash,
-      score: cash,
-      locked_in: true,
+      allocations: newAllocations,
+      cash: newCash,
+      score: newCash,
     })
     .eq("id", body.player_id)
     .select()

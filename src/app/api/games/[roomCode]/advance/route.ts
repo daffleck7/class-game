@@ -1,9 +1,8 @@
 /**
  * POST /api/games/[roomCode]/advance
  *
- * State machine endpoint for the host to advance the game through phases:
- * lobby → allocating → playing (with per-event score calculation) → finished.
- * Requires a valid host_token for authorization.
+ * State machine endpoint for the host to advance the game through phases.
+ * Score = cash. Investments persist and generate returns each round.
  */
 
 import { NextResponse } from "next/server";
@@ -68,7 +67,7 @@ export async function POST(
   }
 
   if (game.status === "playing") {
-    // Action: fire the next event
+    // Fire the next event: apply multipliers, add gains to cash, investments stay
     if (body.action === "fire_event" || !body.action) {
       const nextIndex = game.current_event_index + 1;
 
@@ -85,7 +84,7 @@ export async function POST(
 
       const { data: players, error: playersError } = await supabase
         .from("players")
-        .select("id, allocations, score")
+        .select("id, allocations, cash")
         .eq("game_id", game.id);
 
       if (playersError || !players) {
@@ -93,15 +92,15 @@ export async function POST(
       }
 
       const updates = players.map((player) => {
-        const roundScore = calculateRoundScore(
+        const roundGain = calculateRoundScore(
           player.allocations as Record<Category, number>,
           event.effects
         );
-        const newScore = player.score + roundScore;
+        const newCash = player.cash + roundGain;
 
         return supabase
           .from("players")
-          .update({ score: newScore })
+          .update({ cash: newCash, score: newCash })
           .eq("id", player.id);
       });
 
@@ -124,26 +123,8 @@ export async function POST(
       });
     }
 
-    // Action: start reallocation phase (liquidate investments, set timer)
+    // Start reinvest phase: investments stay as-is, players can add from cash
     if (body.action === "start_realloc") {
-      const { data: players } = await supabase
-        .from("players")
-        .select("id, score")
-        .eq("game_id", game.id);
-
-      if (players) {
-        const liquidateUpdates = players.map((player) =>
-          supabase
-            .from("players")
-            .update({
-              allocations: { rd: 0, security: 0, compatibility: 0, marketing: 0, partnerships: 0 },
-              cash: player.score,
-            })
-            .eq("id", player.id)
-        );
-        await Promise.all(liquidateUpdates);
-      }
-
       const endTime = new Date(Date.now() + 20000).toISOString();
 
       await supabase
@@ -154,7 +135,7 @@ export async function POST(
       return NextResponse.json({ status: "playing", round_phase: "reallocating", round_end_time: endTime });
     }
 
-    // Action: finish game immediately
+    // Finish game
     if (body.action === "finish") {
       await supabase
         .from("games")

@@ -67,11 +67,13 @@ export default function PlayerEvents({
   const roundDelta = score - previousScore;
   const [confirmed, setConfirmed] = useState(false);
 
-  async function handleRealloc(allocations: Record<string, number>) {
+  const totalInvested = Object.values(currentAllocations).reduce((sum, val) => sum + val, 0);
+
+  async function handleReinvest(additionalAllocations: Record<string, number>) {
     const res = await fetch(`/api/games/${roomCode}/allocate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ player_id: playerId, allocations }),
+      body: JSON.stringify({ player_id: playerId, allocations: additionalAllocations }),
     });
     if (res.ok) {
       setConfirmed(true);
@@ -83,25 +85,40 @@ export default function PlayerEvents({
     setConfirmed(false);
   }
 
-  // Reallocation phase: show sliders with timer
+  // Reinvest phase: show current investments + sliders to add from cash
   if (roundPhase === "reallocating") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6">
-        <h2 className="text-2xl font-bold mb-2">Re-allocate Your Budget</h2>
+        <h2 className="text-2xl font-bold mb-2">Reinvest</h2>
         <p className="text-gray-400 text-sm mb-4 text-center max-w-sm">
-          Shift your investments before the next event. Your wallet is ${score}.
-          Anything you don't invest stays as cash.
+          You have <span className="text-emerald-400 font-bold">${score}</span> cash available.
+          Add to your investments before the next event.
         </p>
+
+        {totalInvested > 0 && (
+          <div className="w-full max-w-md mb-4 bg-gray-900 rounded-lg p-3">
+            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Current Investments</p>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(currentAllocations)
+                .filter(([, val]) => val > 0)
+                .map(([cat, val]) => (
+                  <span key={cat} className="text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded">
+                    {CATEGORY_LABELS[cat]}: ${val}
+                  </span>
+                ))}
+            </div>
+          </div>
+        )}
+
         <AllocationSliders
-          onLockIn={handleRealloc}
+          onLockIn={handleReinvest}
           disabled={confirmed}
-          initialAllocations={currentAllocations}
           budget={score}
           autoSubmitAt={roundEndTime}
-          buttonLabel={confirmed ? "Saved ✓" : "Confirm Allocation"}
+          buttonLabel={confirmed ? "Saved ✓" : "Confirm Investments"}
         />
         {confirmed && (
-          <p className="text-emerald-400 text-sm mt-3">Allocation saved! Waiting for next event...</p>
+          <p className="text-emerald-400 text-sm mt-3">Investments saved! Waiting for next event...</p>
         )}
       </div>
     );
@@ -123,7 +140,7 @@ export default function PlayerEvents({
       )}
 
       <div className="space-y-2">
-        <p className="text-sm text-gray-400">Your Wallet</p>
+        <p className="text-sm text-gray-400">Cash</p>
         <p className="text-5xl font-bold">${score}</p>
         {roundDelta !== 0 && (
           <p
@@ -133,6 +150,9 @@ export default function PlayerEvents({
           >
             {roundDelta > 0 ? "+" : ""}${roundDelta}
           </p>
+        )}
+        {totalInvested > 0 && (
+          <p className="text-gray-500 text-sm">Invested: ${totalInvested}</p>
         )}
         {teamRank !== null && (
           <p className="text-gray-500 text-sm mt-2">Your team is #{teamRank}</p>
