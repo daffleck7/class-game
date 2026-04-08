@@ -21,11 +21,11 @@ export function generateRoomCode(): string {
 }
 
 /**
- * Returns a shuffled subset of 7 unique events drawn from ALL_EVENTS.
+ * Returns a shuffled subset of 5 unique events drawn from ALL_EVENTS.
  */
 export function shuffleDeck(): GameEvent[] {
   const shuffled = [...ALL_EVENTS].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, 7);
+  return shuffled.slice(0, 5);
 }
 
 /**

@@ -20,9 +20,9 @@ describe("generateRoomCode", () => {
 });
 
 describe("shuffleDeck", () => {
-  it("returns exactly 7 events", () => {
+  it("returns exactly 5 events", () => {
     const deck = shuffleDeck();
-    expect(deck).toHaveLength(7);
+    expect(deck).toHaveLength(5);
   });
 
   it("only contains events from the full deck", () => {
@@ -36,7 +36,7 @@ describe("shuffleDeck", () => {
   it("does not contain duplicate events", () => {
     const deck = shuffleDeck();
     const titles = deck.map((e) => e.title);
-    expect(new Set(titles).size).toBe(7);
+    expect(new Set(titles).size).toBe(5);
   });
 });
 
