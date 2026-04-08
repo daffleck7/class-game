@@ -1,12 +1,21 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import TeamLeaderboard from "@/components/TeamLeaderboard";
 import type { TeamScore } from "@/lib/game-logic";
+
+const CATEGORY_LABELS: Record<string, string> = {
+  rd: "R&D",
+  security: "Security",
+  compatibility: "Compatibility",
+  marketing: "Marketing",
+  partnerships: "Partnerships",
+};
 
 interface GameEvent {
   title: string;
   description: string;
+  effects: Record<string, number>;
 }
 
 interface HostEventsProps {
@@ -19,6 +28,26 @@ interface HostEventsProps {
   onAdvance: (action: string) => Promise<void>;
 }
 
+function EventEffects({ effects }: { effects: Record<string, number> }) {
+  const nonZero = Object.entries(effects).filter(([, val]) => val !== 0);
+  if (nonZero.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap justify-center gap-2 mt-4">
+      {nonZero.map(([cat, val]) => (
+        <span
+          key={cat}
+          className={`text-sm px-2 py-1 rounded ${
+            val > 0 ? "bg-emerald-900/50 text-emerald-400" : "bg-red-900/50 text-red-400"
+          }`}
+        >
+          {val > 0 ? "+" : ""}{val}x {CATEGORY_LABELS[cat] ?? cat}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function HostEvents({
   currentEventIndex,
   totalEvents,
@@ -29,41 +58,46 @@ export default function HostEvents({
   onAdvance,
 }: HostEventsProps) {
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [autoRunning, setAutoRunning] = useState(false);
+  const [started, setStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const advancingRef = useRef(false);
 
-  // Countdown before firing an event
-  const fireEventWithCountdown = useCallback(async () => {
+  const fireEventWithCountdown = useCallback(() => {
     setCountdown(3);
   }, []);
 
+  // Countdown timer
   useEffect(() => {
     if (countdown === null) return;
     if (countdown === 0) {
       setCountdown(null);
-      onAdvance("fire_event");
+      if (!advancingRef.current) {
+        advancingRef.current = true;
+        onAdvance("fire_event").finally(() => { advancingRef.current = false; });
+      }
       return;
     }
     const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
     return () => clearTimeout(timer);
   }, [countdown, onAdvance]);
 
-  // After event fires (revealing phase), wait 3 seconds then start reallocation
+  // After event fires (revealing phase), wait 3 seconds then start reallocation or finish
   useEffect(() => {
-    if (!autoRunning || roundPhase !== "revealing") return;
+    if (!started || roundPhase !== "revealing") return;
 
     const isLastEvent = currentEventIndex >= totalEvents - 1;
 
     const timer = setTimeout(() => {
-      if (isLastEvent) {
-        onAdvance("finish");
-      } else {
-        onAdvance("start_realloc");
+      if (!advancingRef.current) {
+        advancingRef.current = true;
+        onAdvance(isLastEvent ? "finish" : "start_realloc").finally(() => {
+          advancingRef.current = false;
+        });
       }
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [autoRunning, roundPhase, currentEventIndex, totalEvents, onAdvance]);
+  }, [started, roundPhase, currentEventIndex, totalEvents, onAdvance]);
 
   // During reallocation, count down to next event
   useEffect(() => {
@@ -80,7 +114,6 @@ export default function HostEvents({
 
       if (remaining <= 0) {
         clearInterval(interval);
-        // Fire next event after reallocation ends
         fireEventWithCountdown();
       }
     }, 250);
@@ -88,14 +121,13 @@ export default function HostEvents({
     return () => clearInterval(interval);
   }, [roundPhase, roundEndTime, fireEventWithCountdown]);
 
-  // Start the auto-run loop
   function handleStartEvents() {
-    setAutoRunning(true);
+    setStarted(true);
     fireEventWithCountdown();
   }
 
   // Pre-game: waiting to start
-  if (!autoRunning && currentEventIndex === -1) {
+  if (!started && currentEventIndex === -1) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-8 p-8">
         <h2 className="text-3xl font-bold">Ready to Begin!</h2>
@@ -133,7 +165,7 @@ export default function HostEvents({
     );
   }
 
-  // Revealing phase: show event
+  // Revealing phase: show event with effects
   if (roundPhase === "revealing" && currentEvent) {
     return (
       <div className="flex flex-col items-center gap-8 p-8">
@@ -143,6 +175,7 @@ export default function HostEvents({
         <div className="bg-gray-900 border border-gray-700 rounded-xl p-8 max-w-xl w-full text-center animate-fade-in">
           <h2 className="text-3xl font-bold mb-3">{currentEvent.title}</h2>
           <p className="text-gray-300 text-lg">{currentEvent.description}</p>
+          <EventEffects effects={currentEvent.effects} />
         </div>
         <TeamLeaderboard teamScores={teamScores} />
       </div>

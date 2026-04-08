@@ -13,7 +13,7 @@ interface Game {
   id: string;
   status: string;
   current_event_index: number;
-  event_deck: Array<{ title: string; description: string }>;
+  event_deck: Array<{ title: string; description: string; effects: Record<string, number> }>;
   round_phase: string | null;
   round_end_time: string | null;
 }

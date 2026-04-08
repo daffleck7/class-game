@@ -1,10 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import AllocationSliders from "@/components/AllocationSliders";
+
+const CATEGORY_LABELS: Record<string, string> = {
+  rd: "R&D",
+  security: "Security",
+  compatibility: "Compatibility",
+  marketing: "Marketing",
+  partnerships: "Partnerships",
+};
 
 interface GameEvent {
   title: string;
   description: string;
+  effects: Record<string, number>;
 }
 
 interface PlayerEventsProps {
@@ -21,6 +31,26 @@ interface PlayerEventsProps {
   roundEndTime: string | null;
 }
 
+function EventEffects({ effects }: { effects: Record<string, number> }) {
+  const nonZero = Object.entries(effects).filter(([, val]) => val !== 0);
+  if (nonZero.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap justify-center gap-2 mt-3">
+      {nonZero.map(([cat, val]) => (
+        <span
+          key={cat}
+          className={`text-xs px-2 py-1 rounded ${
+            val > 0 ? "bg-emerald-900/50 text-emerald-400" : "bg-red-900/50 text-red-400"
+          }`}
+        >
+          {val > 0 ? "+" : ""}{val}x {CATEGORY_LABELS[cat] ?? cat}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function PlayerEvents({
   currentEvent,
   score,
@@ -35,13 +65,22 @@ export default function PlayerEvents({
   roundEndTime,
 }: PlayerEventsProps) {
   const roundDelta = score - previousScore;
+  const [confirmed, setConfirmed] = useState(false);
 
   async function handleRealloc(allocations: Record<string, number>) {
-    await fetch(`/api/games/${roomCode}/allocate`, {
+    const res = await fetch(`/api/games/${roomCode}/allocate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ player_id: playerId, allocations }),
     });
+    if (res.ok) {
+      setConfirmed(true);
+    }
+  }
+
+  // Reset confirmed state when phase changes
+  if (roundPhase !== "reallocating" && confirmed) {
+    setConfirmed(false);
   }
 
   // Reallocation phase: show sliders with timer
@@ -55,12 +94,15 @@ export default function PlayerEvents({
         </p>
         <AllocationSliders
           onLockIn={handleRealloc}
-          disabled={false}
+          disabled={confirmed}
           initialAllocations={currentAllocations}
           budget={score}
           autoSubmitAt={roundEndTime}
-          buttonLabel="Confirm Allocation"
+          buttonLabel={confirmed ? "Saved ✓" : "Confirm Allocation"}
         />
+        {confirmed && (
+          <p className="text-emerald-400 text-sm mt-3">Allocation saved! Waiting for next event...</p>
+        )}
       </div>
     );
   }
@@ -76,6 +118,7 @@ export default function PlayerEvents({
         <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm w-full mb-6 animate-fade-in">
           <h2 className="text-2xl font-bold mb-2">{currentEvent.title}</h2>
           <p className="text-gray-300">{currentEvent.description}</p>
+          <EventEffects effects={currentEvent.effects} />
         </div>
       )}
 
