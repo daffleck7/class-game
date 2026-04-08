@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TEAMS, TEAM_NAMES } from "@/lib/teams";
 
 interface PlayerJoinProps {
   roomCode: string;
@@ -60,11 +61,9 @@ export default function PlayerJoin({ roomCode, onJoined }: PlayerJoinProps) {
             onChange={(e) => setTeam(parseInt(e.target.value))}
             className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 px-4 text-lg focus:outline-none focus:border-indigo-500"
           >
-            <option value={1}>Team 1</option>
-            <option value={2}>Team 2</option>
-            <option value={3}>Team 3</option>
-            <option value={4}>Team 4</option>
-            <option value={5}>Team 5</option>
+            {TEAMS.map((t) => (
+              <option key={t} value={t}>{TEAM_NAMES[t]}</option>
+            ))}
           </select>
         </div>
 

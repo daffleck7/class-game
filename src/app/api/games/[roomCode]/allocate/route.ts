@@ -49,20 +49,26 @@ export async function POST(
     return NextResponse.json({ error: "Game not found" }, { status: 404 });
   }
 
-  if (game.status !== "allocating") {
-    return NextResponse.json({ error: "Game is not in allocation phase" }, { status: 400 });
+  if (game.status !== "allocating" && game.status !== "playing") {
+    return NextResponse.json({ error: "Cannot allocate in this phase" }, { status: 400 });
   }
 
   const cash = 100 - totalInvested;
+  const isReallocation = game.status === "playing";
+
+  const updateFields: Record<string, unknown> = {
+    allocations: body.allocations,
+    cash,
+    locked_in: true,
+  };
+
+  if (!isReallocation) {
+    updateFields.score = cash;
+  }
 
   const { data: player, error: playerError } = await supabase
     .from("players")
-    .update({
-      allocations: body.allocations,
-      cash,
-      score: cash,
-      locked_in: true,
-    })
+    .update(updateFields)
     .eq("id", body.player_id)
     .select()
     .single();

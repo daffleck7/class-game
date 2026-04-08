@@ -21,16 +21,25 @@ const CATEGORY_COLORS: Record<string, string> = {
 interface AllocationSlidersProps {
   onLockIn: (allocations: Record<string, number>) => void;
   disabled: boolean;
+  initialAllocations?: Record<string, number>;
+  buttonLabel?: string;
 }
 
-export default function AllocationSliders({ onLockIn, disabled }: AllocationSlidersProps) {
-  const [allocations, setAllocations] = useState<Record<string, number>>({
-    rd: 0,
-    security: 0,
-    compatibility: 0,
-    marketing: 0,
-    partnerships: 0,
-  });
+export default function AllocationSliders({
+  onLockIn,
+  disabled,
+  initialAllocations,
+  buttonLabel,
+}: AllocationSlidersProps) {
+  const [allocations, setAllocations] = useState<Record<string, number>>(
+    initialAllocations ?? {
+      rd: 0,
+      security: 0,
+      compatibility: 0,
+      marketing: 0,
+      partnerships: 0,
+    }
+  );
 
   const totalInvested = Object.values(allocations).reduce((sum, val) => sum + val, 0);
   const wallet = 100 - totalInvested;
@@ -83,7 +92,7 @@ export default function AllocationSliders({ onLockIn, disabled }: AllocationSlid
         disabled={disabled}
         className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
       >
-        {disabled ? "Locked In ✓" : "Lock In Investments"}
+        {disabled ? "Locked In ✓" : buttonLabel ?? "Lock In Investments"}
       </button>
     </div>
   );

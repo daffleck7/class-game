@@ -17,7 +17,7 @@ create table players (
   id uuid primary key default gen_random_uuid(),
   game_id uuid not null references games(id) on delete cascade,
   name text not null,
-  team int not null check (team >= 1 and team <= 5),
+  team int not null check (team in (1, 2, 4, 5, 6)),
   allocations jsonb not null default '{"rd": 0, "security": 0, "compatibility": 0, "marketing": 0, "partnerships": 0}'::jsonb,
   cash int not null default 100,
   score int not null default 100,

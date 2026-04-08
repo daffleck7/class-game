@@ -25,6 +25,9 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
   const [score, setScore] = useState(100);
   const [previousScore, setPreviousScore] = useState(100);
   const [lockedIn, setLockedIn] = useState(false);
+  const [allocations, setAllocations] = useState<Record<string, number>>({
+    rd: 0, security: 0, compatibility: 0, marketing: 0, partnerships: 0,
+  });
   const [teamRank, setTeamRank] = useState<number | null>(null);
   const [playerRankInTeam, setPlayerRankInTeam] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -98,10 +101,15 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "players", filter: `id=eq.${playerId}` },
         (payload) => {
-          const newData = payload.new as { score: number; locked_in: boolean };
+          const newData = payload.new as {
+            score: number;
+            locked_in: boolean;
+            allocations: Record<string, number>;
+          };
           setPreviousScore(score);
           setScore(newData.score);
           setLockedIn(newData.locked_in);
+          if (newData.allocations) setAllocations(newData.allocations);
         }
       )
       .subscribe();
@@ -173,6 +181,9 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
         eventIndex={game.current_event_index}
         totalEvents={game.event_deck.length}
         teamRank={teamRank}
+        roomCode={roomCode}
+        playerId={playerId}
+        currentAllocations={allocations}
       />
     );
   }

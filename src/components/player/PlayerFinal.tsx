@@ -1,6 +1,6 @@
 "use client";
 
-const TEAM_NAMES = ["Team 1", "Team 2", "Team 3", "Team 4", "Team 5"];
+import { TEAM_NAMES } from "@/lib/teams";
 
 interface PlayerFinalProps {
   name: string;
@@ -23,7 +23,7 @@ export default function PlayerFinal({
 
       <div className="bg-gray-900 rounded-xl p-8 max-w-sm w-full space-y-4">
         <p className="text-gray-400">{name}</p>
-        <p className="text-sm text-gray-500">{TEAM_NAMES[team - 1]}</p>
+        <p className="text-sm text-gray-500">{TEAM_NAMES[team]}</p>
 
         <div>
           <p className="text-sm text-gray-400">Final Wallet</p>

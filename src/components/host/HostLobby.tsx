@@ -1,15 +1,7 @@
 "use client";
 
 import QRCode from "@/components/QRCode";
-
-const TEAM_NAMES = ["Team 1", "Team 2", "Team 3", "Team 4", "Team 5"];
-const TEAM_COLORS = [
-  "border-red-600",
-  "border-blue-600",
-  "border-green-600",
-  "border-yellow-600",
-  "border-purple-600",
-];
+import { TEAMS, TEAM_NAMES, TEAM_BORDER_COLORS } from "@/lib/teams";
 
 interface Player {
   id: string;
@@ -45,12 +37,12 @@ export default function HostLobby({ roomCode, players, onStart }: HostLobbyProps
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 w-full max-w-4xl">
-        {[1, 2, 3, 4, 5].map((team) => (
+        {TEAMS.map((team) => (
           <div
             key={team}
-            className={`border-l-4 ${TEAM_COLORS[team - 1]} bg-gray-900 rounded-lg p-4`}
+            className={`border-l-4 ${TEAM_BORDER_COLORS[team]} bg-gray-900 rounded-lg p-4`}
           >
-            <h3 className="font-semibold text-sm text-gray-400 mb-2">{TEAM_NAMES[team - 1]}</h3>
+            <h3 className="font-semibold text-sm text-gray-400 mb-2">{TEAM_NAMES[team]}</h3>
             <div className="space-y-1">
               {(playersByTeam.get(team) || []).map((p) => (
                 <p key={p.id} className="text-sm">{p.name}</p>

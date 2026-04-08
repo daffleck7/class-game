@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
+import { TEAMS } from "@/lib/teams";
 
 interface JoinRequest {
   name?: string;
@@ -17,8 +18,8 @@ export async function POST(
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }
 
-  if (!body.team || body.team < 1 || body.team > 5) {
-    return NextResponse.json({ error: "Team must be between 1 and 5" }, { status: 400 });
+  if (!body.team || !(TEAMS as readonly number[]).includes(body.team)) {
+    return NextResponse.json({ error: "Team must be one of: 1, 2, 4, 5, 6" }, { status: 400 });
   }
 
   const supabase = createServerClient();

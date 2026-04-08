@@ -1,16 +1,7 @@
 "use client";
 
 import type { TeamScore } from "@/lib/game-logic";
-
-const TEAM_COLORS = [
-  "bg-red-600",
-  "bg-blue-600",
-  "bg-green-600",
-  "bg-yellow-600",
-  "bg-purple-600",
-];
-
-const TEAM_NAMES = ["Team 1", "Team 2", "Team 3", "Team 4", "Team 5"];
+import { TEAM_NAMES, TEAM_COLORS } from "@/lib/teams";
 
 interface TeamLeaderboardProps {
   teamScores: TeamScore[];
@@ -35,16 +26,16 @@ export default function TeamLeaderboard({ teamScores, highlight }: TeamLeaderboa
         >
           <span className="text-2xl font-bold text-gray-500 w-8">#{index + 1}</span>
           <div
-            className={`w-3 h-10 rounded ${TEAM_COLORS[ts.team - 1]}`}
+            className={`w-3 h-10 rounded ${TEAM_COLORS[ts.team]}`}
           />
           <div className="flex-1">
             <div className="flex justify-between items-baseline">
-              <span className="font-semibold">{TEAM_NAMES[ts.team - 1]}</span>
+              <span className="font-semibold">{TEAM_NAMES[ts.team]}</span>
               <span className="text-sm text-gray-400">{ts.playerCount} players</span>
             </div>
             <div className="w-full bg-gray-800 rounded-full h-2 mt-1">
               <div
-                className={`${TEAM_COLORS[ts.team - 1]} h-2 rounded-full transition-all duration-700`}
+                className={`${TEAM_COLORS[ts.team]} h-2 rounded-full transition-all duration-700`}
                 style={{ width: `${Math.max((ts.averageScore / maxScore) * 100, 2)}%` }}
               />
             </div>
