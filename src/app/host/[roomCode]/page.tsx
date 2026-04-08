@@ -144,11 +144,11 @@ export default function HostPage({ params }: { params: Promise<{ roomCode: strin
   }
 
   if (game.status === "lobby") {
-    return <HostLobby roomCode={roomCode} players={players} onStart={handleAdvance} />;
+    return <HostLobby roomCode={roomCode} players={players} onStart={() => handleAdvance()} />;
   }
 
   if (game.status === "allocating") {
-    return <HostAllocation players={players} onAdvance={handleAdvance} />;
+    return <HostAllocation players={players} onAdvance={() => handleAdvance()} />;
   }
 
   if (game.status === "playing") {
