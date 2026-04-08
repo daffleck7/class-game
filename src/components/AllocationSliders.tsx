@@ -25,6 +25,7 @@ interface AllocationSlidersProps {
   buttonLabel?: string;
   budget?: number;
   autoSubmitAt?: string | null;
+  hideButton?: boolean;
 }
 
 export default function AllocationSliders({
@@ -34,6 +35,7 @@ export default function AllocationSliders({
   buttonLabel,
   budget = 100,
   autoSubmitAt,
+  hideButton,
 }: AllocationSlidersProps) {
   const [allocations, setAllocations] = useState<Record<string, number>>(
     initialAllocations ?? {
@@ -144,13 +146,15 @@ export default function AllocationSliders({
         ))}
       </div>
 
-      <button
-        onClick={() => { submittedRef.current = true; onLockIn(allocations); }}
-        disabled={disabled}
-        className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-      >
-        {disabled ? "Locked In ✓" : buttonLabel ?? "Lock In Investments"}
-      </button>
+      {!hideButton && (
+        <button
+          onClick={() => { submittedRef.current = true; onLockIn(allocations); }}
+          disabled={disabled}
+          className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+        >
+          {disabled ? "Locked In ✓" : buttonLabel ?? "Lock In Investments"}
+        </button>
+      )}
     </div>
   );
 }

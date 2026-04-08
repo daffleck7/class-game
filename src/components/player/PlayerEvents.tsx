@@ -112,14 +112,12 @@ export default function PlayerEvents({
 
         <AllocationSliders
           onLockIn={handleReinvest}
-          disabled={confirmed}
+          disabled={false}
           budget={score}
           autoSubmitAt={roundEndTime}
-          buttonLabel={confirmed ? "Saved ✓" : "Confirm Investments"}
+          hideButton
         />
-        {confirmed && (
-          <p className="text-emerald-400 text-sm mt-3">Investments saved! Waiting for next event...</p>
-        )}
+        <p className="text-gray-500 text-xs mt-3">Your investments will auto-save when the timer runs out.</p>
       </div>
     );
   }
