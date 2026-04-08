@@ -14,6 +14,8 @@ interface Game {
   status: string;
   current_event_index: number;
   event_deck: Array<{ title: string; description: string }>;
+  round_phase: string | null;
+  round_end_time: string | null;
 }
 
 interface Player {
@@ -107,7 +109,7 @@ export default function HostPage({ params }: { params: Promise<{ roomCode: strin
     };
   }, [game?.id, fetchPlayers, fetchScores]);
 
-  async function handleAdvance() {
+  async function handleAdvance(action?: string) {
     if (!hostToken) {
       setError("Missing host token — are you the host?");
       return;
@@ -115,7 +117,7 @@ export default function HostPage({ params }: { params: Promise<{ roomCode: strin
     const res = await fetch(`/api/games/${roomCode}/advance`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ host_token: hostToken }),
+      body: JSON.stringify({ host_token: hostToken, action }),
     });
     if (!res.ok) {
       const data = await res.json();
@@ -161,7 +163,9 @@ export default function HostPage({ params }: { params: Promise<{ roomCode: strin
         totalEvents={game.event_deck.length}
         currentEvent={currentEvent}
         teamScores={teamScores}
-        onNextEvent={handleAdvance}
+        roundPhase={game.round_phase}
+        roundEndTime={game.round_end_time}
+        onAdvance={handleAdvance}
       />
     );
   }

@@ -13,6 +13,7 @@ import type { Category } from "@/lib/events";
 
 interface AdvanceRequest {
   host_token: string;
+  action?: "fire_event" | "start_realloc" | "finish";
 }
 
 export async function POST(
@@ -60,58 +61,108 @@ export async function POST(
   if (game.status === "allocating") {
     await supabase
       .from("games")
-      .update({ status: "playing", current_event_index: -1 })
+      .update({ status: "playing", current_event_index: -1, round_phase: null, round_end_time: null })
       .eq("id", game.id);
 
     return NextResponse.json({ status: "playing", message: "Events phase started" });
   }
 
   if (game.status === "playing") {
-    const nextIndex = game.current_event_index + 1;
+    // Action: fire the next event
+    if (body.action === "fire_event" || !body.action) {
+      const nextIndex = game.current_event_index + 1;
 
-    if (nextIndex >= deck.length) {
+      if (nextIndex >= deck.length) {
+        await supabase
+          .from("games")
+          .update({ status: "finished", round_phase: null, round_end_time: null })
+          .eq("id", game.id);
+
+        return NextResponse.json({ status: "finished", message: "Game over" });
+      }
+
+      const event = deck[nextIndex];
+
+      const { data: players, error: playersError } = await supabase
+        .from("players")
+        .select("id, allocations, score")
+        .eq("game_id", game.id);
+
+      if (playersError || !players) {
+        return NextResponse.json({ error: "Failed to fetch players" }, { status: 500 });
+      }
+
+      const updates = players.map((player) => {
+        const roundScore = calculateRoundScore(
+          player.allocations as Record<Category, number>,
+          event.effects
+        );
+        const newScore = player.score + roundScore;
+
+        return supabase
+          .from("players")
+          .update({ score: newScore })
+          .eq("id", player.id);
+      });
+
+      await Promise.all(updates);
+
       await supabase
         .from("games")
-        .update({ status: "finished" })
+        .update({
+          current_event_index: nextIndex,
+          round_phase: "revealing",
+          round_end_time: null,
+        })
+        .eq("id", game.id);
+
+      return NextResponse.json({
+        status: "playing",
+        current_event_index: nextIndex,
+        event: { title: event.title, description: event.description },
+        isLastEvent: nextIndex >= deck.length - 1,
+      });
+    }
+
+    // Action: start reallocation phase (liquidate investments, set timer)
+    if (body.action === "start_realloc") {
+      const { data: players } = await supabase
+        .from("players")
+        .select("id, score")
+        .eq("game_id", game.id);
+
+      if (players) {
+        const liquidateUpdates = players.map((player) =>
+          supabase
+            .from("players")
+            .update({
+              allocations: { rd: 0, security: 0, compatibility: 0, marketing: 0, partnerships: 0 },
+              cash: player.score,
+            })
+            .eq("id", player.id)
+        );
+        await Promise.all(liquidateUpdates);
+      }
+
+      const endTime = new Date(Date.now() + 20000).toISOString();
+
+      await supabase
+        .from("games")
+        .update({ round_phase: "reallocating", round_end_time: endTime })
+        .eq("id", game.id);
+
+      return NextResponse.json({ status: "playing", round_phase: "reallocating", round_end_time: endTime });
+    }
+
+    // Action: finish game immediately
+    if (body.action === "finish") {
+      await supabase
+        .from("games")
+        .update({ status: "finished", round_phase: null, round_end_time: null })
         .eq("id", game.id);
 
       return NextResponse.json({ status: "finished", message: "Game over" });
     }
-
-    const event = deck[nextIndex];
-
-    const { data: players, error: playersError } = await supabase
-      .from("players")
-      .select("id, allocations, score")
-      .eq("game_id", game.id);
-
-    if (playersError || !players) {
-      return NextResponse.json({ error: "Failed to fetch players" }, { status: 500 });
-    }
-
-    for (const player of players) {
-      const roundScore = calculateRoundScore(
-        player.allocations as Record<Category, number>,
-        event.effects
-      );
-      const newScore = player.score + roundScore;
-
-      await supabase
-        .from("players")
-        .update({ score: newScore })
-        .eq("id", player.id);
-    }
-
-    await supabase
-      .from("games")
-      .update({ current_event_index: nextIndex })
-      .eq("id", game.id);
-
-    return NextResponse.json({
-      status: "playing",
-      current_event_index: nextIndex,
-      event: { title: event.title, description: event.description },
-    });
   }
 
   return NextResponse.json({ error: "Game is already finished" }, { status: 400 });

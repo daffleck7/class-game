@@ -14,7 +14,9 @@ interface HostEventsProps {
   totalEvents: number;
   currentEvent: GameEvent | null;
   teamScores: TeamScore[];
-  onNextEvent: () => void;
+  roundPhase: string | null;
+  roundEndTime: string | null;
+  onAdvance: (action: string) => Promise<void>;
 }
 
 export default function HostEvents({
@@ -22,17 +24,16 @@ export default function HostEvents({
   totalEvents,
   currentEvent,
   teamScores,
-  onNextEvent,
+  roundPhase,
+  roundEndTime,
+  onAdvance,
 }: HostEventsProps) {
-  const isLastEvent = currentEventIndex >= totalEvents - 1;
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [revealed, setRevealed] = useState(currentEventIndex >= 0);
+  const [autoRunning, setAutoRunning] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
-  useEffect(() => {
-    setRevealed(currentEventIndex >= 0 && countdown === null);
-  }, [currentEventIndex, countdown]);
-
-  const handleNextEvent = useCallback(() => {
+  // Countdown before firing an event
+  const fireEventWithCountdown = useCallback(async () => {
     setCountdown(3);
   }, []);
 
@@ -40,14 +41,79 @@ export default function HostEvents({
     if (countdown === null) return;
     if (countdown === 0) {
       setCountdown(null);
-      setRevealed(true);
-      onNextEvent();
+      onAdvance("fire_event");
       return;
     }
     const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
     return () => clearTimeout(timer);
-  }, [countdown, onNextEvent]);
+  }, [countdown, onAdvance]);
 
+  // After event fires (revealing phase), wait 3 seconds then start reallocation
+  useEffect(() => {
+    if (!autoRunning || roundPhase !== "revealing") return;
+
+    const isLastEvent = currentEventIndex >= totalEvents - 1;
+
+    const timer = setTimeout(() => {
+      if (isLastEvent) {
+        onAdvance("finish");
+      } else {
+        onAdvance("start_realloc");
+      }
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [autoRunning, roundPhase, currentEventIndex, totalEvents, onAdvance]);
+
+  // During reallocation, count down to next event
+  useEffect(() => {
+    if (roundPhase !== "reallocating" || !roundEndTime) {
+      setTimeLeft(null);
+      return;
+    }
+
+    const deadline = new Date(roundEndTime).getTime();
+
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setTimeLeft(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(interval);
+        // Fire next event after reallocation ends
+        fireEventWithCountdown();
+      }
+    }, 250);
+
+    return () => clearInterval(interval);
+  }, [roundPhase, roundEndTime, fireEventWithCountdown]);
+
+  // Start the auto-run loop
+  function handleStartEvents() {
+    setAutoRunning(true);
+    fireEventWithCountdown();
+  }
+
+  // Pre-game: waiting to start
+  if (!autoRunning && currentEventIndex === -1) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-8 p-8">
+        <h2 className="text-3xl font-bold">Ready to Begin!</h2>
+        <p className="text-gray-400 text-lg text-center max-w-md">
+          Events will auto-advance: 3s reveal, then 20s for players to re-allocate.
+        </p>
+        <TeamLeaderboard teamScores={teamScores} />
+        <button
+          onClick={handleStartEvents}
+          className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl py-4 px-12 rounded-xl transition-colors"
+        >
+          Start Events
+        </button>
+      </div>
+    );
+  }
+
+  // Countdown animation
   if (countdown !== null) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6">
@@ -67,40 +133,46 @@ export default function HostEvents({
     );
   }
 
-  return (
-    <div className="flex flex-col items-center gap-8 p-8">
-      <div className="text-center">
+  // Revealing phase: show event
+  if (roundPhase === "revealing" && currentEvent) {
+    return (
+      <div className="flex flex-col items-center gap-8 p-8">
         <p className="text-sm text-gray-400 uppercase tracking-wider">
           Event {currentEventIndex + 1} of {totalEvents}
         </p>
-      </div>
-
-      {currentEvent && revealed && (
         <div className="bg-gray-900 border border-gray-700 rounded-xl p-8 max-w-xl w-full text-center animate-fade-in">
           <h2 className="text-3xl font-bold mb-3">{currentEvent.title}</h2>
           <p className="text-gray-300 text-lg">{currentEvent.description}</p>
         </div>
-      )}
+        <TeamLeaderboard teamScores={teamScores} />
+      </div>
+    );
+  }
 
-      {!currentEvent && currentEventIndex === -1 && (
-        <div className="bg-gray-900 border border-gray-700 rounded-xl p-8 max-w-xl w-full text-center">
-          <h2 className="text-2xl font-bold mb-3">Ready to Begin!</h2>
-          <p className="text-gray-400">Click below to reveal the first event.</p>
+  // Reallocation phase: show timer
+  if (roundPhase === "reallocating") {
+    return (
+      <div className="flex flex-col items-center gap-8 p-8">
+        <p className="text-sm text-gray-400 uppercase tracking-wider">
+          After Event {currentEventIndex + 1} of {totalEvents}
+        </p>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">Players Re-allocating...</h2>
+          {timeLeft !== null && (
+            <p className={`text-5xl font-bold ${timeLeft <= 5 ? "text-red-400 animate-pulse" : "text-indigo-400"}`}>
+              {timeLeft}s
+            </p>
+          )}
         </div>
-      )}
+        <TeamLeaderboard teamScores={teamScores} />
+      </div>
+    );
+  }
 
+  // Fallback
+  return (
+    <div className="flex flex-col items-center gap-8 p-8">
       <TeamLeaderboard teamScores={teamScores} />
-
-      <button
-        onClick={handleNextEvent}
-        className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl py-4 px-12 rounded-xl transition-colors"
-      >
-        {currentEventIndex === -1
-          ? "Reveal First Event"
-          : isLastEvent
-            ? "Show Final Results"
-            : "Next Event"}
-      </button>
     </div>
   );
 }

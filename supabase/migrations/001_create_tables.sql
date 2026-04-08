@@ -9,6 +9,8 @@ create table games (
   current_event_index int not null default -1,
   event_deck jsonb not null default '[]'::jsonb,
   host_token text not null,
+  round_phase text check (round_phase in ('revealing', 'reallocating')),
+  round_end_time timestamptz,
   created_at timestamptz not null default now()
 );
 

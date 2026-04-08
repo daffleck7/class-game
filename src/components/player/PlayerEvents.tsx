@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import AllocationSliders from "@/components/AllocationSliders";
 
 interface GameEvent {
@@ -18,6 +17,8 @@ interface PlayerEventsProps {
   roomCode: string;
   playerId: string;
   currentAllocations: Record<string, number>;
+  roundPhase: string | null;
+  roundEndTime: string | null;
 }
 
 export default function PlayerEvents({
@@ -30,47 +31,41 @@ export default function PlayerEvents({
   roomCode,
   playerId,
   currentAllocations,
+  roundPhase,
+  roundEndTime,
 }: PlayerEventsProps) {
   const roundDelta = score - previousScore;
-  const [showRealloc, setShowRealloc] = useState(false);
-  const [saving, setSaving] = useState(false);
 
   async function handleRealloc(allocations: Record<string, number>) {
-    setSaving(true);
-    const res = await fetch(`/api/games/${roomCode}/allocate`, {
+    await fetch(`/api/games/${roomCode}/allocate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ player_id: playerId, allocations }),
     });
-    if (res.ok) {
-      setShowRealloc(false);
-    }
-    setSaving(false);
   }
 
-  if (showRealloc) {
+  // Reallocation phase: show sliders with timer
+  if (roundPhase === "reallocating") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6">
-        <h2 className="text-2xl font-bold mb-2">Re-allocate Budget</h2>
-        <p className="text-gray-400 text-sm mb-6 text-center max-w-sm">
-          Shift your investments before the next event hits. Your current score stays the same.
+        <h2 className="text-2xl font-bold mb-2">Re-allocate Your Budget</h2>
+        <p className="text-gray-400 text-sm mb-4 text-center max-w-sm">
+          Shift your investments before the next event. Your wallet is ${score}.
+          Anything you don't invest stays as cash.
         </p>
         <AllocationSliders
           onLockIn={handleRealloc}
-          disabled={saving}
+          disabled={false}
           initialAllocations={currentAllocations}
-          buttonLabel={saving ? "Saving..." : "Confirm New Allocation"}
+          budget={score}
+          autoSubmitAt={roundEndTime}
+          buttonLabel="Confirm Allocation"
         />
-        <button
-          onClick={() => setShowRealloc(false)}
-          className="mt-4 text-gray-400 hover:text-gray-300 text-sm underline"
-        >
-          Cancel
-        </button>
       </div>
     );
   }
 
+  // Revealing phase or waiting: show event and score
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
       <p className="text-sm text-gray-400 uppercase tracking-wider mb-4">
@@ -78,7 +73,7 @@ export default function PlayerEvents({
       </p>
 
       {currentEvent && (
-        <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm w-full mb-6">
+        <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm w-full mb-6 animate-fade-in">
           <h2 className="text-2xl font-bold mb-2">{currentEvent.title}</h2>
           <p className="text-gray-300">{currentEvent.description}</p>
         </div>
@@ -100,13 +95,6 @@ export default function PlayerEvents({
           <p className="text-gray-500 text-sm mt-2">Your team is #{teamRank}</p>
         )}
       </div>
-
-      <button
-        onClick={() => setShowRealloc(true)}
-        className="mt-8 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 font-semibold py-2 px-6 rounded-lg transition-colors text-sm"
-      >
-        Re-allocate Investments
-      </button>
     </div>
   );
 }
