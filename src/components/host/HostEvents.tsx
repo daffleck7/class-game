@@ -24,7 +24,7 @@ interface HostEventsProps {
   currentEvent: GameEvent | null;
   teamScores: TeamScore[];
   roundPhase: string | null;
-  roundEndTime: string | null;
+  players: Array<{ id: string; name: string; locked_in: boolean }>;
   onAdvance: (action: string) => Promise<void>;
 }
 
@@ -54,19 +54,17 @@ export default function HostEvents({
   currentEvent,
   teamScores,
   roundPhase,
-  roundEndTime,
+  players,
   onAdvance,
 }: HostEventsProps) {
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [started, setStarted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const advancingRef = useRef(false);
 
   const fireEventWithCountdown = useCallback(() => {
     setCountdown(3);
   }, []);
 
-  // Countdown timer
+  // Countdown timer — fires event when it reaches 0
   useEffect(() => {
     if (countdown === null) return;
     if (countdown === 0) {
@@ -81,69 +79,10 @@ export default function HostEvents({
     return () => clearTimeout(timer);
   }, [countdown, onAdvance]);
 
-  // After event fires (revealing phase), wait 3 seconds then start reallocation or finish
-  useEffect(() => {
-    if (!started || roundPhase !== "revealing") return;
-
-    const isLastEvent = currentEventIndex >= totalEvents - 1;
-
-    const timer = setTimeout(() => {
-      if (!advancingRef.current) {
-        advancingRef.current = true;
-        onAdvance(isLastEvent ? "finish" : "start_realloc").finally(() => {
-          advancingRef.current = false;
-        });
-      }
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [started, roundPhase, currentEventIndex, totalEvents, onAdvance]);
-
-  // During reallocation, count down to next event
-  useEffect(() => {
-    if (roundPhase !== "reallocating" || !roundEndTime) {
-      setTimeLeft(null);
-      return;
-    }
-
-    const deadline = new Date(roundEndTime).getTime();
-
-    const interval = setInterval(() => {
-      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-      setTimeLeft(remaining);
-
-      if (remaining <= 0) {
-        clearInterval(interval);
-        fireEventWithCountdown();
-      }
-    }, 250);
-
-    return () => clearInterval(interval);
-  }, [roundPhase, roundEndTime, fireEventWithCountdown]);
-
-  function handleStartEvents() {
-    setStarted(true);
-    fireEventWithCountdown();
-  }
-
-  // Pre-game: waiting to start
-  if (!started && currentEventIndex === -1) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-8 p-8">
-        <h2 className="text-3xl font-bold">Ready to Begin!</h2>
-        <p className="text-gray-400 text-lg text-center max-w-md">
-          Events will auto-advance: 3s reveal, then 20s for players to re-allocate.
-        </p>
-        <TeamLeaderboard teamScores={teamScores} />
-        <button
-          onClick={handleStartEvents}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl py-4 px-12 rounded-xl transition-colors"
-        >
-          Start Events
-        </button>
-      </div>
-    );
-  }
+  const isLastEvent = currentEventIndex >= totalEvents - 1;
+  const lockedIn = players.filter((p) => p.locked_in).length;
+  const total = players.length;
+  const allLocked = lockedIn === total;
 
   // Countdown animation
   if (countdown !== null) {
@@ -165,7 +104,7 @@ export default function HostEvents({
     );
   }
 
-  // Revealing phase: show event with effects
+  // Revealing phase: show event + button for reallocation or finish
   if (roundPhase === "revealing" && currentEvent) {
     return (
       <div className="flex flex-col items-center gap-8 p-8">
@@ -178,34 +117,76 @@ export default function HostEvents({
           <EventEffects effects={currentEvent.effects} />
         </div>
         <TeamLeaderboard teamScores={teamScores} />
+        <button
+          onClick={() => onAdvance(isLastEvent ? "finish" : "open_realloc")}
+          className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl py-4 px-12 rounded-xl transition-colors"
+        >
+          {isLastEvent ? "Finish Game" : "Open Reallocation"}
+        </button>
       </div>
     );
   }
 
-  // Reallocation phase: show timer
+  // Reallocation phase: show lock-in progress + trigger next event button
   if (roundPhase === "reallocating") {
     return (
       <div className="flex flex-col items-center gap-8 p-8">
         <p className="text-sm text-gray-400 uppercase tracking-wider">
           After Event {currentEventIndex + 1} of {totalEvents}
         </p>
+        <h2 className="text-2xl font-bold">Players Re-investing...</h2>
+
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">Players Re-allocating...</h2>
-          {timeLeft !== null && (
-            <p className={`text-5xl font-bold ${timeLeft <= 5 ? "text-red-400 animate-pulse" : "text-indigo-400"}`}>
-              {timeLeft}s
-            </p>
-          )}
+          <p className="text-6xl font-bold">
+            <span className="text-emerald-400">{lockedIn}</span>
+            <span className="text-gray-600"> / {total}</span>
+          </p>
+          <p className="text-gray-400 mt-2">locked in</p>
         </div>
+
+        <div className="w-full max-w-md bg-gray-800 rounded-full h-4">
+          <div
+            className="bg-emerald-500 h-4 rounded-full transition-all duration-500"
+            style={{ width: `${total > 0 ? (lockedIn / total) * 100 : 0}%` }}
+          />
+        </div>
+
         <TeamLeaderboard teamScores={teamScores} />
+
+        <button
+          onClick={fireEventWithCountdown}
+          className={`font-bold text-xl py-4 px-12 rounded-xl transition-colors ${
+            allLocked
+              ? "bg-indigo-600 hover:bg-indigo-500 text-white"
+              : "bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600"
+          }`}
+        >
+          {allLocked
+            ? "Trigger Next Event"
+            : "Trigger Next Event (skip stragglers)"}
+        </button>
       </div>
     );
   }
 
-  // Fallback
+  // Default: waiting to start (round_phase is null)
   return (
-    <div className="flex flex-col items-center gap-8 p-8">
+    <div className="flex flex-col items-center justify-center min-h-[70vh] gap-8 p-8">
+      <h2 className="text-3xl font-bold">
+        {currentEventIndex === -1 ? "Ready to Begin!" : `Event ${currentEventIndex + 1} Complete`}
+      </h2>
+      <p className="text-gray-400 text-lg text-center max-w-md">
+        {currentEventIndex === -1
+          ? "Trigger the first event when you're ready."
+          : "Trigger the next event when you're ready."}
+      </p>
       <TeamLeaderboard teamScores={teamScores} />
+      <button
+        onClick={fireEventWithCountdown}
+        className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xl py-4 px-12 rounded-xl transition-colors"
+      >
+        Trigger Next Event
+      </button>
     </div>
   );
 }
