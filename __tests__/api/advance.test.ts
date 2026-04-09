@@ -75,4 +75,57 @@ describe("POST /api/games/[roomCode]/advance", () => {
     const response = await POST(request, { params: Promise.resolve({ roomCode: "ABC123" }) });
     expect(response.status).toBe(403);
   });
+
+  it("transitions from lobby to allocating", async () => {
+    mockGameSelectSingle.mockResolvedValue({
+      data: {
+        id: "game-uuid",
+        status: "lobby",
+        host_token: "correct-token",
+        current_event_index: -1,
+        event_deck: [],
+      },
+      error: null,
+    });
+
+    const request = new Request("http://localhost/api/games/ABC123/advance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ host_token: "correct-token" }),
+    });
+
+    const response = await POST(request, { params: Promise.resolve({ roomCode: "ABC123" }) });
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.status).toBe("allocating");
+  });
+
+  it("open_realloc sets round_phase to reallocating without round_end_time", async () => {
+    mockGameSelectSingle.mockResolvedValue({
+      data: {
+        id: "game-uuid",
+        status: "playing",
+        host_token: "correct-token",
+        current_event_index: 0,
+        event_deck: [
+          { title: "E1", description: "d", effects: { rd: 1, security: 0, compatibility: 0, marketing: 0, partnerships: 0 } },
+          { title: "E2", description: "d", effects: { rd: 0, security: 1, compatibility: 0, marketing: 0, partnerships: 0 } },
+        ],
+      },
+      error: null,
+    });
+
+    const request = new Request("http://localhost/api/games/ABC123/advance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ host_token: "correct-token", action: "open_realloc" }),
+    });
+
+    const response = await POST(request, { params: Promise.resolve({ roomCode: "ABC123" }) });
+    expect(response.status).toBe(200);
+
+    const updateArg = mockGameUpdate.mock.calls[0][0];
+    expect(updateArg.round_phase).toBe("reallocating");
+    expect(updateArg.round_end_time).toBeNull();
+  });
 });

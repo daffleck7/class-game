@@ -12,7 +12,7 @@ import type { Category } from "@/lib/events";
 
 interface AdvanceRequest {
   host_token: string;
-  action?: "fire_event" | "start_realloc" | "finish";
+  action?: "fire_event" | "open_realloc" | "finish";
 }
 
 export async function POST(
@@ -68,16 +68,11 @@ export async function POST(
 
   if (game.status === "playing") {
     // Fire the next event: apply multipliers, add gains to cash, investments stay
-    if (body.action === "fire_event" || !body.action) {
+    if (body.action === "fire_event") {
       const nextIndex = game.current_event_index + 1;
 
       if (nextIndex >= deck.length) {
-        await supabase
-          .from("games")
-          .update({ status: "finished", round_phase: null, round_end_time: null })
-          .eq("id", game.id);
-
-        return NextResponse.json({ status: "finished", message: "Game over" });
+        return NextResponse.json({ error: "No more events to fire" }, { status: 400 });
       }
 
       const event = deck[nextIndex];
@@ -123,16 +118,16 @@ export async function POST(
       });
     }
 
-    // Start reinvest phase: investments stay as-is, players can add from cash
-    if (body.action === "start_realloc") {
-      const endTime = new Date(Date.now() + 20000).toISOString();
+    // Open realloc phase: reset locked_in for all players, no timer
+    if (body.action === "open_realloc") {
+      await supabase.from("players").update({ locked_in: false }).eq("game_id", game.id);
 
       await supabase
         .from("games")
-        .update({ round_phase: "reallocating", round_end_time: endTime })
+        .update({ round_phase: "reallocating", round_end_time: null })
         .eq("id", game.id);
 
-      return NextResponse.json({ status: "playing", round_phase: "reallocating", round_end_time: endTime });
+      return NextResponse.json({ status: "playing", round_phase: "reallocating" });
     }
 
     // Finish game
