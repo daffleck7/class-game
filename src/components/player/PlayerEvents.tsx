@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import AllocationSliders from "@/components/AllocationSliders";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -28,7 +27,7 @@ interface PlayerEventsProps {
   playerId: string;
   currentAllocations: Record<string, number>;
   roundPhase: string | null;
-  roundEndTime: string | null;
+  lockedIn: boolean;
 }
 
 function EventEffects({ effects }: { effects: Record<string, number> }) {
@@ -62,37 +61,27 @@ export default function PlayerEvents({
   playerId,
   currentAllocations,
   roundPhase,
-  roundEndTime,
+  lockedIn,
 }: PlayerEventsProps) {
   const roundDelta = score - previousScore;
-  const [confirmed, setConfirmed] = useState(false);
-
   const totalInvested = Object.values(currentAllocations).reduce((sum, val) => sum + val, 0);
 
-  async function handleReinvest(additionalAllocations: Record<string, number>) {
-    const res = await fetch(`/api/games/${roomCode}/allocate`, {
+  async function handleReinvest(allocations: Record<string, number>) {
+    await fetch(`/api/games/${roomCode}/allocate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ player_id: playerId, allocations: additionalAllocations }),
+      body: JSON.stringify({ player_id: playerId, allocations }),
     });
-    if (res.ok) {
-      setConfirmed(true);
-    }
   }
 
-  // Reset confirmed state when phase changes
-  if (roundPhase !== "reallocating" && confirmed) {
-    setConfirmed(false);
-  }
-
-  // Reinvest phase: show current investments + sliders to add from cash
+  // Reinvest phase: show current investments + sliders + Lock In button
   if (roundPhase === "reallocating") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6">
         <h2 className="text-2xl font-bold mb-2">Reinvest</h2>
         <p className="text-gray-400 text-sm mb-4 text-center max-w-sm">
-          You have <span className="text-emerald-400 font-bold">${score}</span> cash available.
-          Add to your investments before the next event.
+          Spend your cash to invest in categories.
+          Any cash you don't invest is kept safe and counts toward your score.
         </p>
 
         {totalInvested > 0 && (
@@ -112,50 +101,59 @@ export default function PlayerEvents({
 
         <AllocationSliders
           onLockIn={handleReinvest}
-          disabled={false}
+          disabled={lockedIn}
           budget={score}
-          autoSubmitAt={roundEndTime}
-          hideButton
         />
-        <p className="text-gray-500 text-xs mt-3">Your investments will auto-save when the timer runs out.</p>
+        {lockedIn && (
+          <p className="text-emerald-400 mt-4">Locked in! Waiting for next event...</p>
+        )}
       </div>
     );
   }
 
-  // Revealing phase or waiting: show event and score
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
-      <p className="text-sm text-gray-400 uppercase tracking-wider mb-4">
-        Event {eventIndex + 1} of {totalEvents}
-      </p>
+  // Revealing phase: show event and score
+  if (roundPhase === "revealing" && currentEvent) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+        <p className="text-sm text-gray-400 uppercase tracking-wider mb-4">
+          Event {eventIndex + 1} of {totalEvents}
+        </p>
 
-      {currentEvent && (
         <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm w-full mb-6 animate-fade-in">
           <h2 className="text-2xl font-bold mb-2">{currentEvent.title}</h2>
           <p className="text-gray-300">{currentEvent.description}</p>
           <EventEffects effects={currentEvent.effects} />
         </div>
-      )}
 
-      <div className="space-y-2">
-        <p className="text-sm text-gray-400">Cash</p>
-        <p className="text-5xl font-bold">${score}</p>
-        {roundDelta !== 0 && (
-          <p
-            className={`text-xl font-semibold ${
-              roundDelta > 0 ? "text-emerald-400" : "text-red-400"
-            }`}
-          >
-            {roundDelta > 0 ? "+" : ""}${roundDelta}
-          </p>
-        )}
-        {totalInvested > 0 && (
-          <p className="text-gray-500 text-sm">Invested: ${totalInvested}</p>
-        )}
-        {teamRank !== null && (
-          <p className="text-gray-500 text-sm mt-2">Your team is #{teamRank}</p>
-        )}
+        <div className="space-y-2">
+          <p className="text-sm text-gray-400">Cash</p>
+          <p className="text-5xl font-bold">${score}</p>
+          {roundDelta !== 0 && (
+            <p
+              className={`text-xl font-semibold ${
+                roundDelta > 0 ? "text-emerald-400" : "text-red-400"
+              }`}
+            >
+              {roundDelta > 0 ? "+" : ""}${roundDelta}
+            </p>
+          )}
+          {totalInvested > 0 && (
+            <p className="text-gray-500 text-sm">Invested: ${totalInvested}</p>
+          )}
+          {teamRank !== null && (
+            <p className="text-gray-500 text-sm mt-2">Your team is #{teamRank}</p>
+          )}
+        </div>
       </div>
+    );
+  }
+
+  // Waiting for host (round_phase is null)
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+      <div className="w-16 h-16 rounded-full border-4 border-gray-700 border-t-indigo-500 animate-spin mb-6" />
+      <h2 className="text-xl font-bold mb-2">Waiting for host...</h2>
+      <p className="text-gray-500 text-sm">The next event will start soon.</p>
     </div>
   );
 }
