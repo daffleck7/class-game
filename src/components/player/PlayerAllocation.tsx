@@ -30,8 +30,9 @@ export default function PlayerAllocation({
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
       <h2 className="text-2xl font-bold mb-2">Invest Your Budget</h2>
       <p className="text-gray-400 text-sm mb-6 text-center max-w-sm">
-        You have $100 in your wallet. Invest in categories to earn returns when events
-        hit — but anything you invest leaves your wallet.
+        You have $100 in cash. Spend it to invest in categories — your investments
+        earn returns when events hit. Any cash you don't invest is kept safe and
+        counts toward your final score.
       </p>
       <AllocationSliders onLockIn={handleLockIn} disabled={lockedIn} />
       {lockedIn && (
