@@ -86,20 +86,23 @@ export async function POST(
         return NextResponse.json({ error: "Failed to fetch players" }, { status: 500 });
       }
 
-      const updates = players.map((player) => {
+      const upsertRows = players.map((player) => {
         const roundGain = calculateRoundScore(
           player.allocations as Record<Category, number>,
           event.effects
         );
         const newCash = player.cash + roundGain;
 
-        return supabase
-          .from("players")
-          .update({ cash: newCash, score: newCash })
-          .eq("id", player.id);
+        return { id: player.id, cash: newCash, score: newCash };
       });
 
-      await Promise.all(updates);
+      const { error: upsertError } = await supabase
+        .from("players")
+        .upsert(upsertRows, { onConflict: "id", ignoreDuplicates: false });
+
+      if (upsertError) {
+        return NextResponse.json({ error: "Failed to update scores" }, { status: 500 });
+      }
 
       await supabase
         .from("games")
