@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState } from "react";
 
 const CATEGORY_LABELS: Record<string, string> = {
   rd: "R&D",
@@ -24,8 +24,6 @@ interface AllocationSlidersProps {
   initialAllocations?: Record<string, number>;
   buttonLabel?: string;
   budget?: number;
-  autoSubmitAt?: string | null;
-  hideButton?: boolean;
 }
 
 export default function AllocationSliders({
@@ -34,8 +32,6 @@ export default function AllocationSliders({
   initialAllocations,
   buttonLabel,
   budget = 100,
-  autoSubmitAt,
-  hideButton,
 }: AllocationSlidersProps) {
   const [allocations, setAllocations] = useState<Record<string, number>>(
     initialAllocations ?? {
@@ -46,53 +42,9 @@ export default function AllocationSliders({
       partnerships: 0,
     }
   );
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const allocationsRef = useRef(allocations);
-  const submittedRef = useRef(false);
-
-  useEffect(() => {
-    allocationsRef.current = allocations;
-  }, [allocations]);
-
-  // Reset when initialAllocations change (new round)
-  useEffect(() => {
-    if (initialAllocations) {
-      setAllocations(initialAllocations);
-      submittedRef.current = false;
-    }
-  }, [initialAllocations]);
-
-  const handleAutoSubmit = useCallback(() => {
-    if (!submittedRef.current && !disabled) {
-      submittedRef.current = true;
-      onLockIn(allocationsRef.current);
-    }
-  }, [onLockIn, disabled]);
-
-  // Countdown timer and auto-submit
-  useEffect(() => {
-    if (!autoSubmitAt) {
-      setTimeLeft(null);
-      return;
-    }
-
-    const deadline = new Date(autoSubmitAt).getTime();
-
-    const interval = setInterval(() => {
-      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-      setTimeLeft(remaining);
-
-      if (remaining <= 0) {
-        clearInterval(interval);
-        handleAutoSubmit();
-      }
-    }, 250);
-
-    return () => clearInterval(interval);
-  }, [autoSubmitAt, handleAutoSubmit]);
 
   const totalInvested = Object.values(allocations).reduce((sum, val) => sum + val, 0);
-  const wallet = budget - totalInvested;
+  const remaining = budget - totalInvested;
 
   function handleChange(category: string, value: number) {
     const otherTotal = totalInvested - allocations[category];
@@ -103,19 +55,10 @@ export default function AllocationSliders({
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
-      {timeLeft !== null && (
-        <div className="text-center">
-          <p className="text-sm text-gray-400">Time remaining</p>
-          <p className={`text-3xl font-bold ${timeLeft <= 5 ? "text-red-400 animate-pulse" : "text-indigo-400"}`}>
-            {timeLeft}s
-          </p>
-        </div>
-      )}
-
       <div className="text-center">
-        <p className="text-sm text-gray-400">Wallet Balance</p>
-        <p className={`text-4xl font-bold ${wallet < budget ? "text-amber-400" : "text-emerald-400"}`}>
-          ${wallet}
+        <p className="text-sm text-gray-400">Cash Remaining</p>
+        <p className={`text-4xl font-bold ${remaining < budget ? "text-amber-400" : "text-emerald-400"}`}>
+          ${remaining}
         </p>
         <p className="text-sm text-gray-500 mt-1">Invested: ${totalInvested}</p>
       </div>
@@ -146,15 +89,13 @@ export default function AllocationSliders({
         ))}
       </div>
 
-      {!hideButton && (
-        <button
-          onClick={() => { submittedRef.current = true; onLockIn(allocations); }}
-          disabled={disabled}
-          className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-        >
-          {disabled ? "Locked In ✓" : buttonLabel ?? "Lock In Investments"}
-        </button>
-      )}
+      <button
+        onClick={() => onLockIn(allocations)}
+        disabled={disabled}
+        className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+      >
+        {disabled ? "Locked In ✓" : buttonLabel ?? "Lock In Investments"}
+      </button>
     </div>
   );
 }
