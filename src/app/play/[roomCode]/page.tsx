@@ -15,7 +15,6 @@ interface Game {
   current_event_index: number;
   event_deck: Array<{ title: string; description: string; effects: Record<string, number> }>;
   round_phase: string | null;
-  round_end_time: string | null;
 }
 
 export default function PlayPage({ params }: { params: Promise<{ roomCode: string }> }) {
@@ -187,7 +186,7 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
         playerId={playerId}
         currentAllocations={allocations}
         roundPhase={game.round_phase}
-        roundEndTime={game.round_end_time}
+        lockedIn={lockedIn}
       />
     );
   }

@@ -15,7 +15,6 @@ interface Game {
   current_event_index: number;
   event_deck: Array<{ title: string; description: string; effects: Record<string, number> }>;
   round_phase: string | null;
-  round_end_time: string | null;
 }
 
 interface Player {
@@ -164,7 +163,7 @@ export default function HostPage({ params }: { params: Promise<{ roomCode: strin
         currentEvent={currentEvent}
         teamScores={teamScores}
         roundPhase={game.round_phase}
-        roundEndTime={game.round_end_time}
+        players={players}
         onAdvance={handleAdvance}
       />
     );
