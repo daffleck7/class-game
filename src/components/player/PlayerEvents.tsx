@@ -74,8 +74,23 @@ export default function PlayerEvents({
     });
   }
 
-  // Reinvest phase: show current investments + sliders + Lock In button
+  // Reinvest phase: show sliders or locked-in summary
   if (roundPhase === "reallocating") {
+    if (lockedIn) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+          <p className="text-emerald-400 text-xl font-bold mb-4">Locked in!</p>
+          <p className="text-4xl font-bold mb-2">${score}</p>
+          <p className="text-gray-500 text-sm">Cash remaining</p>
+          {totalInvested > 0 && (
+            <p className="text-gray-500 text-sm mt-1">Invested: ${totalInvested}</p>
+          )}
+          <div className="w-16 h-16 rounded-full border-4 border-gray-700 border-t-indigo-500 animate-spin mt-8" />
+          <p className="text-gray-500 text-sm mt-4">Waiting for next event...</p>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6">
         <h2 className="text-2xl font-bold mb-2">Reinvest</h2>
@@ -101,12 +116,9 @@ export default function PlayerEvents({
 
         <AllocationSliders
           onLockIn={handleReinvest}
-          disabled={lockedIn}
+          disabled={false}
           budget={score}
         />
-        {lockedIn && (
-          <p className="text-emerald-400 mt-4">Locked in! Waiting for next event...</p>
-        )}
       </div>
     );
   }

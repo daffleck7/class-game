@@ -110,6 +110,7 @@ export async function POST(
       allocations: newAllocations,
       cash: newCash,
       score: newCash,
+      locked_in: true,
     })
     .eq("id", body.player_id)
     .select()
