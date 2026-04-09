@@ -86,7 +86,7 @@ export async function POST(
         return NextResponse.json({ error: "Failed to fetch players" }, { status: 500 });
       }
 
-      const upsertRows = players.map((player) => {
+      const updates = players.map((player) => {
         const roundGain = calculateRoundScore(
           player.allocations as Record<Category, number>,
           event.effects
@@ -96,12 +96,17 @@ export async function POST(
         return { id: player.id, cash: newCash, score: newCash };
       });
 
-      const { error: upsertError } = await supabase
-        .from("players")
-        .upsert(upsertRows, { onConflict: "id", ignoreDuplicates: false });
-
-      if (upsertError) {
-        return NextResponse.json({ error: "Failed to update scores" }, { status: 500 });
+      const BATCH_SIZE = 10;
+      for (let i = 0; i < updates.length; i += BATCH_SIZE) {
+        const batch = updates.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          batch.map((u) =>
+            supabase
+              .from("players")
+              .update({ cash: u.cash, score: u.score })
+              .eq("id", u.id)
+          )
+        );
       }
 
       await supabase
