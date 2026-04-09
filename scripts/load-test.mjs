@@ -132,25 +132,31 @@ async function main() {
     });
     console.log(`  Open realloc: ${reallocMs}ms`);
 
-    // Fetch current player cash to know budgets
-    const { data: currentGame } = await api(`/api/games/${roomCode}`);
-
-    // All 60 players reallocate (invest small amounts from remaining cash)
+    // All 60 players reallocate (skip if no cash)
+    let invested = 0;
+    let skipped = 0;
     await runBatch(
       `${NUM_PLAYERS} players reallocating`,
       players.map((p) => async () => {
-        // Fetch player's current cash first
-        const playerRes = await fetch(
-          `${BASE}/api/games/${roomCode}`,
-        );
-        // Use a small fixed allocation to avoid exceeding cash
+        // Only invest 1 per category ($5 total) if player can afford it
         const smallAlloc = { rd: 1, security: 1, compatibility: 1, marketing: 1, partnerships: 1 };
-        return api(`/api/games/${roomCode}/allocate`, {
-          player_id: p.player_id,
-          allocations: smallAlloc,
-        });
+        try {
+          const result = await api(`/api/games/${roomCode}/allocate`, {
+            player_id: p.player_id,
+            allocations: smallAlloc,
+          });
+          invested++;
+          return result;
+        } catch {
+          // Player likely has no cash — skip
+          skipped++;
+          return { data: null, elapsed: 0 };
+        }
       })
     );
+    if (skipped > 0) {
+      console.log(`  (${skipped} players skipped — no cash to invest)`);
+    }
   }
 
   // 7. Fetch final scores

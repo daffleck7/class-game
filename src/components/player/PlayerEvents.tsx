@@ -91,6 +91,21 @@ export default function PlayerEvents({
       );
     }
 
+    if (score <= 0) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+          <p className="text-red-400 text-xl font-bold mb-4">No cash to invest</p>
+          <p className="text-4xl font-bold mb-2 text-red-400">${score}</p>
+          <p className="text-gray-500 text-sm">Cash remaining</p>
+          {totalInvested > 0 && (
+            <p className="text-gray-500 text-sm mt-1">Spent on investments: ${totalInvested}</p>
+          )}
+          <div className="w-16 h-16 rounded-full border-4 border-gray-700 border-t-indigo-500 animate-spin mt-8" />
+          <p className="text-gray-500 text-sm mt-4">Waiting for next event...</p>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6">
         <h2 className="text-2xl font-bold mb-2">Reinvest</h2>
