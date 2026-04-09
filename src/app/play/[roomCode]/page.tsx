@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, use } from "react";
+import { useEffect, useState, useCallback, useRef, use } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { calculateTeamScores } from "@/lib/game-logic";
 import PlayerJoin from "@/components/player/PlayerJoin";
@@ -25,6 +25,7 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
   const [playerTeam, setPlayerTeam] = useState(1);
   const [score, setScore] = useState(100);
   const [previousScore, setPreviousScore] = useState(100);
+  const scoreRef = useRef(100);
   const [lockedIn, setLockedIn] = useState(false);
   const [allocations, setAllocations] = useState<Record<string, number>>({
     rd: 0, security: 0, compatibility: 0, marketing: 0, partnerships: 0,
@@ -52,10 +53,11 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
       .eq("id", playerId)
       .single<{ score: number }>();
     if (data) {
-      setPreviousScore(score);
+      setPreviousScore(scoreRef.current);
       setScore(data.score);
+      scoreRef.current = data.score;
     }
-  }, [playerId, game?.id, score]);
+  }, [playerId, game?.id]);
 
   const fetchRanks = useCallback(async () => {
     if (!game?.id) return;
@@ -107,8 +109,9 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
             locked_in: boolean;
             allocations: Record<string, number>;
           };
-          setPreviousScore(score);
+          setPreviousScore(scoreRef.current);
           setScore(newData.score);
+          scoreRef.current = newData.score;
           setLockedIn(newData.locked_in);
           if (newData.allocations) setAllocations(newData.allocations);
         }
@@ -118,7 +121,7 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [game?.id, playerId, score]);
+  }, [game?.id, playerId]);
 
   useEffect(() => {
     if (game?.status === "playing" || game?.status === "finished") {
