@@ -26,11 +26,21 @@ export async function POST(
 
   const supabase = createServerClient();
 
+  interface GameRow {
+    id: string;
+    status: string;
+    host_token: string;
+    current_phase: number;
+    current_round: number;
+    round_supply: number;
+    phase_results: unknown[];
+  }
+
   const { data: game, error: gameError } = await supabase
     .from("games")
     .select("id, status, host_token, current_phase, current_round, round_supply, phase_results")
     .eq("room_code", roomCode)
-    .single();
+    .single<GameRow>();
 
   if (gameError || !game) {
     return NextResponse.json({ error: "Game not found" }, { status: 404 });
@@ -39,6 +49,8 @@ export async function POST(
   if (body.host_token !== game.host_token) {
     return NextResponse.json({ error: "Invalid host token" }, { status: 403 });
   }
+
+  console.log("[advance] game.status:", JSON.stringify(game.status), "action:", body.action);
 
   // LOBBY -> BIDDING (start game)
   if (game.status === "lobby") {
