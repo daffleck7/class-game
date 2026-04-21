@@ -69,7 +69,9 @@ export interface RoundResult {
  * @returns A RoundResult containing sorted resolved bids and surplus totals.
  */
 export function resolveRound(bids: BidInput[], supply: number): RoundResult {
-  const sorted_bids: ResolvedBid[] = [...bids]
+  // Sort by bid descending, with random tiebreaker for equal bids
+  const shuffled = [...bids].sort(() => Math.random() - 0.5);
+  const sorted_bids: ResolvedBid[] = shuffled
     .sort((a, b) => b.bid - a.bid)
     .map((bid, index) => {
       const won = index < supply;
