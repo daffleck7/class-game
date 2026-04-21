@@ -1,20 +1,23 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, use } from "react";
+import { useEffect, useState, useCallback, use } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { calculateTeamScores } from "@/lib/game-logic";
 import PlayerJoin from "@/components/player/PlayerJoin";
-import PlayerWaiting from "@/components/player/PlayerWaiting";
-import PlayerAllocation from "@/components/player/PlayerAllocation";
-import PlayerEvents from "@/components/player/PlayerEvents";
+import PlayerBidding from "@/components/player/PlayerBidding";
+import PlayerReveal from "@/components/player/PlayerReveal";
 import PlayerFinal from "@/components/player/PlayerFinal";
 
 interface Game {
   id: string;
   status: string;
-  current_event_index: number;
-  event_deck: Array<{ title: string; description: string; effects: Record<string, number> }>;
-  round_phase: string | null;
+  current_phase: number;
+  current_round: number;
+  round_supply: number;
+  phase_results: Array<{
+    phase: number;
+    bids: Array<{ player_id: string; won: boolean; surplus: number; bid: number }>;
+  }>;
 }
 
 export default function PlayPage({ params }: { params: Promise<{ roomCode: string }> }) {
@@ -23,15 +26,12 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState("");
   const [playerTeam, setPlayerTeam] = useState(1);
-  const [score, setScore] = useState(100);
-  const [previousScore, setPreviousScore] = useState(100);
-  const scoreRef = useRef(100);
-  const [lockedIn, setLockedIn] = useState(false);
-  const [allocations, setAllocations] = useState<Record<string, number>>({
-    rd: 0, security: 0, compatibility: 0, marketing: 0, partnerships: 0,
-  });
+  const [currentBid, setCurrentBid] = useState<number | null>(null);
+  const [totalSurplus, setTotalSurplus] = useState(0);
+  const [playerCount, setPlayerCount] = useState(0);
+  const [revealInfo, setRevealInfo] = useState<{ won: boolean; bid: number; surplus: number } | null>(null);
+  const [rank, setRank] = useState<number | null>(null);
   const [teamRank, setTeamRank] = useState<number | null>(null);
-  const [playerRankInTeam, setPlayerRankInTeam] = useState<number | null>(null);
   const [error, setError] = useState("");
 
   const fetchGame = useCallback(async () => {
@@ -44,43 +44,68 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
     }
   }, [roomCode]);
 
-  const fetchPlayerScore = useCallback(async () => {
+  const fetchPlayerData = useCallback(async () => {
     if (!playerId || !game?.id) return;
     const supabase = getSupabaseBrowser();
     const { data } = await supabase
       .from("players")
-      .select("score")
+      .select("current_bid, total_surplus")
       .eq("id", playerId)
-      .single<{ score: number }>();
+      .single();
     if (data) {
-      setPreviousScore(scoreRef.current);
-      setScore(data.score);
-      scoreRef.current = data.score;
+      setCurrentBid(data.current_bid);
+      setTotalSurplus(data.total_surplus);
     }
   }, [playerId, game?.id]);
 
-  const fetchRanks = useCallback(async () => {
+  const fetchPlayerCount = useCallback(async () => {
     if (!game?.id) return;
+    const supabase = getSupabaseBrowser();
+    const { data } = await supabase
+      .from("players")
+      .select("id")
+      .eq("game_id", game.id);
+    if (data) setPlayerCount(data.length);
+  }, [game?.id]);
+
+  const fetchRevealPosition = useCallback(async () => {
+    if (!game?.id || !playerId) return;
     const supabase = getSupabaseBrowser();
     const { data: allPlayers } = await supabase
       .from("players")
-      .select("id, team, score")
+      .select("id, current_bid")
+      .eq("game_id", game.id);
+
+    if (!allPlayers) return;
+
+    const sorted = [...allPlayers].sort((a, b) => (b.current_bid ?? 0) - (a.current_bid ?? 0));
+    const myIndex = sorted.findIndex((p) => p.id === playerId);
+    const myBid = sorted[myIndex]?.current_bid ?? 0;
+    const won = myIndex >= 0 && myIndex < game.round_supply;
+    const surplus = won ? 100 - myBid : 0;
+    setRevealInfo({ won, bid: myBid, surplus });
+  }, [game?.id, game?.round_supply, playerId]);
+
+  const fetchRanks = useCallback(async () => {
+    if (!game?.id || !playerId) return;
+    const supabase = getSupabaseBrowser();
+    const { data: allPlayers } = await supabase
+      .from("players")
+      .select("id, team, total_surplus")
       .eq("game_id", game.id)
-      .order("score", { ascending: false })
-      .returns<Array<{ id: string; team: number; score: number }>>();
+      .order("total_surplus", { ascending: false });
 
-    if (allPlayers) {
-      const teamScores = calculateTeamScores(allPlayers);
-      const myTeamIndex = teamScores.findIndex((t) => t.team === playerTeam);
-      setTeamRank(myTeamIndex >= 0 ? myTeamIndex + 1 : null);
+    if (!allPlayers) return;
 
-      const myTeamPlayers = allPlayers
-        .filter((p) => p.team === playerTeam)
-        .sort((a, b) => b.score - a.score);
-      const myIndex = myTeamPlayers.findIndex((p) => p.id === playerId);
-      setPlayerRankInTeam(myIndex >= 0 ? myIndex + 1 : null);
-    }
-  }, [game?.id, playerTeam, playerId]);
+    const myIndex = allPlayers.findIndex((p) => p.id === playerId);
+    setRank(myIndex >= 0 ? myIndex + 1 : null);
+
+    const teamScores = calculateTeamScores(
+      allPlayers.map((p) => ({ team: p.team, score: p.total_surplus }))
+    );
+    const myTeamIndex = teamScores.findIndex((t) => t.team === playerTeam);
+    setTeamRank(myTeamIndex >= 0 ? myTeamIndex + 1 : null);
+  }, [game?.id, playerId, playerTeam]);
 
   useEffect(() => {
     fetchGame();
@@ -88,11 +113,13 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
 
   useEffect(() => {
     if (!game?.id) return;
+    fetchPlayerData();
+    fetchPlayerCount();
 
     const supabase = getSupabaseBrowser();
 
     const channel = supabase
-      .channel(`player-${game.id}`)
+      .channel(`player-${game.id}-${playerId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "games", filter: `id=eq.${game.id}` },
@@ -104,16 +131,9 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "players", filter: `id=eq.${playerId}` },
         (payload) => {
-          const newData = payload.new as {
-            score: number;
-            locked_in: boolean;
-            allocations: Record<string, number>;
-          };
-          setPreviousScore(scoreRef.current);
-          setScore(newData.score);
-          scoreRef.current = newData.score;
-          setLockedIn(newData.locked_in);
-          if (newData.allocations) setAllocations(newData.allocations);
+          const newData = payload.new as { current_bid: number | null; total_surplus: number };
+          setCurrentBid(newData.current_bid);
+          setTotalSurplus(newData.total_surplus);
         }
       )
       .subscribe();
@@ -121,14 +141,23 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [game?.id, playerId]);
+  }, [game?.id, playerId, fetchPlayerData, fetchPlayerCount]);
 
+  // Handle state transitions
   useEffect(() => {
-    if (game?.status === "playing" || game?.status === "finished") {
-      fetchPlayerScore();
-      fetchRanks();
+    if (game?.status === "revealing") {
+      fetchRevealPosition();
+      fetchPlayerData();
     }
-  }, [game?.status, game?.current_event_index, fetchPlayerScore, fetchRanks]);
+    if (game?.status === "bidding") {
+      setRevealInfo(null);
+      fetchPlayerData();
+    }
+    if (game?.status === "finished") {
+      fetchRanks();
+      fetchPlayerData();
+    }
+  }, [game?.status, game?.current_round, game?.current_phase, fetchRevealPosition, fetchPlayerData, fetchRanks]);
 
   function handleJoined(id: string, name: string, team: number) {
     setPlayerId(id);
@@ -157,40 +186,75 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
   }
 
   if (game.status === "lobby") {
-    return <PlayerWaiting name={playerName} team={playerTeam} />;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 gap-4">
+        <h1 className="text-3xl font-bold">Market Mayhem</h1>
+        <p className="text-gray-400">Welcome, {playerName}! (Team {playerTeam})</p>
+        <p className="text-gray-500">Waiting for host to start...</p>
+      </div>
+    );
   }
 
-  if (game.status === "allocating") {
+  if (game.status === "bidding") {
     return (
-      <PlayerAllocation
+      <PlayerBidding
         roomCode={roomCode}
         playerId={playerId}
-        lockedIn={lockedIn}
-        onLockedIn={() => setLockedIn(true)}
+        phase={game.current_phase}
+        round={game.current_round}
+        supply={game.round_supply}
+        playerCount={playerCount}
+        currentBid={currentBid}
+        onBidSubmitted={(bid) => setCurrentBid(bid)}
       />
     );
   }
 
-  if (game.status === "playing") {
-    const currentEvent =
-      game.current_event_index >= 0
-        ? game.event_deck[game.current_event_index]
-        : null;
+  if (game.status === "revealing") {
+    const isFinalRound = game.current_round === 2;
+
+    // For final round, prefer phase_results data
+    if (isFinalRound) {
+      const latestPhaseResult = game.phase_results?.find(
+        (r) => r.phase === game.current_phase
+      );
+      if (latestPhaseResult) {
+        const myBid = latestPhaseResult.bids.find((b) => b.player_id === playerId);
+        if (myBid) {
+          return (
+            <PlayerReveal
+              phase={game.current_phase}
+              round={game.current_round}
+              won={myBid.won}
+              bid={myBid.bid}
+              surplus={myBid.surplus}
+              totalSurplus={totalSurplus}
+              isFinalRound={true}
+            />
+          );
+        }
+      }
+    }
+
+    // For discovery rounds (or fallback), use fetched position
+    if (revealInfo) {
+      return (
+        <PlayerReveal
+          phase={game.current_phase}
+          round={game.current_round}
+          won={revealInfo.won}
+          bid={revealInfo.bid}
+          surplus={revealInfo.surplus}
+          totalSurplus={totalSurplus}
+          isFinalRound={isFinalRound}
+        />
+      );
+    }
 
     return (
-      <PlayerEvents
-        currentEvent={currentEvent}
-        score={score}
-        previousScore={previousScore}
-        eventIndex={game.current_event_index}
-        totalEvents={game.event_deck.length}
-        teamRank={teamRank}
-        roomCode={roomCode}
-        playerId={playerId}
-        currentAllocations={allocations}
-        roundPhase={game.round_phase}
-        lockedIn={lockedIn}
-      />
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-400">Loading results...</p>
+      </div>
     );
   }
 
@@ -199,9 +263,9 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
       <PlayerFinal
         name={playerName}
         team={playerTeam}
-        score={score}
+        totalSurplus={totalSurplus}
+        rank={rank}
         teamRank={teamRank}
-        playerRankInTeam={playerRankInTeam}
       />
     );
   }
