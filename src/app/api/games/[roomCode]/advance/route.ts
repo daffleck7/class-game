@@ -50,8 +50,6 @@ export async function POST(
     return NextResponse.json({ error: "Invalid host token" }, { status: 403 });
   }
 
-  console.log("[advance] game.status:", JSON.stringify(game.status), "action:", body.action);
-
   // LOBBY -> BIDDING (start game)
   if (game.status === "lobby") {
     const { data: players } = await supabase
