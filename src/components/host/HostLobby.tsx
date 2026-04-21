@@ -25,7 +25,7 @@ export default function HostLobby({ roomCode, players, onStart }: HostLobbyProps
 
   return (
     <div className="flex flex-col items-center gap-8 p-8">
-      <h1 className="text-4xl font-bold">Budget Blitz</h1>
+      <h1 className="text-4xl font-bold">Market Mayhem</h1>
 
       <div className="flex flex-col sm:flex-row items-center gap-8">
         <QRCode roomCode={roomCode} />
