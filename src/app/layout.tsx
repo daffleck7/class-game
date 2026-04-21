@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Budget Blitz",
-  description: "An interactive classroom icebreaker investment game",
+  title: "Market Mayhem",
+  description: "A classroom auction game demonstrating consumer surplus",
 };
 
 export default function RootLayout({

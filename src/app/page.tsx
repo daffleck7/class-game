@@ -35,8 +35,8 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 gap-12">
       <div className="text-center">
-        <h1 className="text-5xl font-bold mb-2">Budget Blitz</h1>
-        <p className="text-gray-400 text-lg">The classroom investment game</p>
+        <h1 className="text-5xl font-bold mb-2">Market Mayhem</h1>
+        <p className="text-gray-400 text-lg">The classroom auction game</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-8 w-full max-w-xl">
