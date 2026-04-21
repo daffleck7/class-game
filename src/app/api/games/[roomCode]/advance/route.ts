@@ -88,14 +88,30 @@ export async function POST(
       return NextResponse.json({ error: "Failed to fetch players" }, { status: 500 });
     }
 
-    const bids = players.map((p) => ({
+    // Players who didn't bid are excluded from the auction — they can't win
+    const bidders = players.filter((p) => p.current_bid !== null && p.current_bid > 0);
+    const nonBidders = players.filter((p) => p.current_bid === null || p.current_bid <= 0);
+
+    const bids = bidders.map((p) => ({
       player_id: p.id,
       name: p.name,
       team: p.team,
-      bid: p.current_bid ?? 0,
+      bid: p.current_bid as number,
     }));
 
     const result = resolveRound(bids, game.round_supply);
+
+    // Append non-bidders as losers at the bottom of the list
+    for (const p of nonBidders) {
+      result.sorted_bids.push({
+        player_id: p.id,
+        name: p.name,
+        team: p.team,
+        bid: 0,
+        won: false,
+        surplus: 0,
+      });
+    }
 
     // If this is round 3 (index 2), store phase results and update surplus
     if (game.current_round === 2) {
