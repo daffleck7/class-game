@@ -1,3 +1,9 @@
+/**
+ * POST /api/games/[roomCode]/join
+ *
+ * Adds a player to the game lobby.
+ */
+
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
 import { TEAMS } from "@/lib/teams";
@@ -44,8 +50,6 @@ export async function POST(
       game_id: game.id,
       name: body.name.trim(),
       team: body.team,
-      score: 100,
-      cash: 100,
     })
     .select()
     .single();
