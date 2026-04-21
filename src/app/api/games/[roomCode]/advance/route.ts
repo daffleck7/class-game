@@ -1,18 +1,16 @@
 /**
  * POST /api/games/[roomCode]/advance
  *
- * State machine endpoint for the host to advance the game through phases.
- * Score = cash. Investments persist and generate returns each round.
+ * State machine endpoint for the host to advance through auction phases.
  */
 
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
-import { calculateRoundScore } from "@/lib/game-logic";
-import type { Category } from "@/lib/events";
+import { calculateSupply, resolveRound } from "@/lib/auction-logic";
 
 interface AdvanceRequest {
   host_token: string;
-  action?: "fire_event" | "open_realloc" | "finish";
+  action?: "reveal" | "next_round" | "next_phase" | "finish";
 }
 
 export async function POST(
@@ -30,7 +28,7 @@ export async function POST(
 
   const { data: game, error: gameError } = await supabase
     .from("games")
-    .select("id, status, host_token, current_event_index, event_deck")
+    .select("id, status, host_token, current_phase, current_round, round_supply, phase_results")
     .eq("room_code", roomCode)
     .single();
 
@@ -42,112 +40,174 @@ export async function POST(
     return NextResponse.json({ error: "Invalid host token" }, { status: 403 });
   }
 
-  const deck = game.event_deck as Array<{
-    title: string;
-    description: string;
-    effects: Record<Category, number>;
-  }>;
-
+  // LOBBY -> BIDDING (start game)
   if (game.status === "lobby") {
+    const { data: players } = await supabase
+      .from("players")
+      .select("id")
+      .eq("game_id", game.id);
+
+    const playerCount = players?.length ?? 0;
+    if (playerCount < 2) {
+      return NextResponse.json({ error: "Need at least 2 players" }, { status: 400 });
+    }
+
+    const supply = calculateSupply(0, playerCount);
+
     await supabase
       .from("games")
-      .update({ status: "allocating" })
+      .update({
+        status: "bidding",
+        current_phase: 0,
+        current_round: 0,
+        round_supply: supply,
+      })
       .eq("id", game.id);
 
-    return NextResponse.json({ status: "allocating", message: "Allocation phase started" });
+    return NextResponse.json({ status: "bidding", phase: 0, round: 0, supply });
   }
 
-  if (game.status === "allocating") {
-    await supabase
-      .from("games")
-      .update({ status: "playing", current_event_index: -1, round_phase: null, round_end_time: null })
-      .eq("id", game.id);
+  // BIDDING -> REVEALING (reveal bids)
+  if (game.status === "bidding" && body.action === "reveal") {
+    const { data: players } = await supabase
+      .from("players")
+      .select("id, name, team, current_bid")
+      .eq("game_id", game.id);
 
-    return NextResponse.json({ status: "playing", message: "Events phase started" });
-  }
+    if (!players) {
+      return NextResponse.json({ error: "Failed to fetch players" }, { status: 500 });
+    }
 
-  if (game.status === "playing") {
-    // Fire the next event: apply multipliers, add gains to cash, investments stay
-    if (body.action === "fire_event") {
-      const nextIndex = game.current_event_index + 1;
+    const bids = players.map((p) => ({
+      player_id: p.id,
+      name: p.name,
+      team: p.team,
+      bid: p.current_bid ?? 0,
+    }));
 
-      if (nextIndex >= deck.length) {
-        return NextResponse.json({ error: "No more events to fire" }, { status: 400 });
-      }
+    const result = resolveRound(bids, game.round_supply);
 
-      const event = deck[nextIndex];
+    // If this is round 3 (index 2), store phase results and update surplus
+    if (game.current_round === 2) {
+      const phaseResults = [...(game.phase_results as unknown[]), {
+        phase: game.current_phase,
+        supply: game.round_supply,
+        producer_surplus: result.producer_surplus,
+        consumer_surplus: result.consumer_surplus,
+        bids: result.sorted_bids,
+      }];
 
-      const { data: players, error: playersError } = await supabase
-        .from("players")
-        .select("id, allocations, cash")
-        .eq("game_id", game.id);
+      await supabase
+        .from("games")
+        .update({ status: "revealing", phase_results: phaseResults })
+        .eq("id", game.id);
 
-      if (playersError || !players) {
-        return NextResponse.json({ error: "Failed to fetch players" }, { status: 500 });
-      }
+      // Update each winner's total_surplus
+      for (const resolvedBid of result.sorted_bids) {
+        if (resolvedBid.won && resolvedBid.surplus !== 0) {
+          const { data: playerData } = await supabase
+            .from("players")
+            .select("total_surplus")
+            .eq("id", resolvedBid.player_id)
+            .single();
 
-      const updates = players.map((player) => {
-        const roundGain = calculateRoundScore(
-          player.allocations as Record<Category, number>,
-          event.effects
-        );
-        const newCash = player.cash + roundGain;
-
-        return { id: player.id, cash: newCash, score: newCash };
-      });
-
-      const BATCH_SIZE = 10;
-      for (let i = 0; i < updates.length; i += BATCH_SIZE) {
-        const batch = updates.slice(i, i + BATCH_SIZE);
-        await Promise.all(
-          batch.map((u) =>
-            supabase
+          if (playerData) {
+            await supabase
               .from("players")
-              .update({ cash: u.cash, score: u.score })
-              .eq("id", u.id)
-          )
-        );
+              .update({ total_surplus: playerData.total_surplus + resolvedBid.surplus })
+              .eq("id", resolvedBid.player_id);
+          }
+        }
       }
-
+    } else {
       await supabase
         .from("games")
-        .update({
-          current_event_index: nextIndex,
-          round_phase: "revealing",
-          round_end_time: null,
-        })
+        .update({ status: "revealing" })
         .eq("id", game.id);
-
-      return NextResponse.json({
-        status: "playing",
-        current_event_index: nextIndex,
-        event: { title: event.title, description: event.description },
-        isLastEvent: nextIndex >= deck.length - 1,
-      });
     }
 
-    // Open realloc phase: reset locked_in for all players, no timer
-    if (body.action === "open_realloc") {
-      await supabase.from("players").update({ locked_in: false }).eq("game_id", game.id);
-
-      await supabase
-        .from("games")
-        .update({ round_phase: "reallocating", round_end_time: null })
-        .eq("id", game.id);
-
-      return NextResponse.json({ status: "playing", round_phase: "reallocating" });
-    }
-
-    // Finish game
-    if (body.action === "finish") {
-      await supabase
-        .from("games")
-        .update({ status: "finished", round_phase: null, round_end_time: null })
-        .eq("id", game.id);
-
-      return NextResponse.json({ status: "finished", message: "Game over" });
-    }
+    return NextResponse.json({
+      status: "revealing",
+      round: game.current_round,
+      phase: game.current_phase,
+      result,
+    });
   }
 
-  return NextResponse.json({ error: "Game is already finished" }, { status: 400 });
+  // REVEALING -> BIDDING (next round within same phase)
+  if (game.status === "revealing" && body.action === "next_round") {
+    if (game.current_round >= 2) {
+      return NextResponse.json({ error: "No more rounds in this phase" }, { status: 400 });
+    }
+
+    await supabase
+      .from("players")
+      .update({ current_bid: null })
+      .eq("game_id", game.id);
+
+    await supabase
+      .from("games")
+      .update({
+        status: "bidding",
+        current_round: game.current_round + 1,
+      })
+      .eq("id", game.id);
+
+    return NextResponse.json({
+      status: "bidding",
+      phase: game.current_phase,
+      round: game.current_round + 1,
+    });
+  }
+
+  // REVEALING -> BIDDING (next phase)
+  if (game.status === "revealing" && body.action === "next_phase") {
+    if (game.current_phase >= 2) {
+      return NextResponse.json({ error: "No more phases" }, { status: 400 });
+    }
+
+    const nextPhase = game.current_phase + 1;
+
+    const { data: players } = await supabase
+      .from("players")
+      .select("id")
+      .eq("game_id", game.id);
+
+    const playerCount = players?.length ?? 0;
+    const supply = calculateSupply(nextPhase, playerCount);
+
+    await supabase
+      .from("players")
+      .update({ current_bid: null })
+      .eq("game_id", game.id);
+
+    await supabase
+      .from("games")
+      .update({
+        status: "bidding",
+        current_phase: nextPhase,
+        current_round: 0,
+        round_supply: supply,
+      })
+      .eq("id", game.id);
+
+    return NextResponse.json({
+      status: "bidding",
+      phase: nextPhase,
+      round: 0,
+      supply,
+    });
+  }
+
+  // REVEALING -> FINISHED
+  if (game.status === "revealing" && body.action === "finish") {
+    await supabase
+      .from("games")
+      .update({ status: "finished" })
+      .eq("id", game.id);
+
+    return NextResponse.json({ status: "finished" });
+  }
+
+  return NextResponse.json({ error: "Invalid action for current game state" }, { status: 400 });
 }
