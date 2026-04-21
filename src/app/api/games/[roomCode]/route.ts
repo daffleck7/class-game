@@ -1,3 +1,4 @@
+/** GET /api/games/[roomCode] — Returns the current game state. */
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
 
@@ -10,7 +11,7 @@ export async function GET(
 
   const { data: game, error } = await supabase
     .from("games")
-    .select("id, room_code, status, current_event_index, event_deck, round_phase, round_end_time, created_at")
+    .select("id, room_code, status, current_phase, current_round, round_supply, phase_results, created_at")
     .eq("room_code", roomCode)
     .single();
 

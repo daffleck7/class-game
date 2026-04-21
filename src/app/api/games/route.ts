@@ -1,22 +1,24 @@
+/** POST /api/games — Creates a new Market Mayhem game room. */
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
-import { generateRoomCode, shuffleDeck } from "@/lib/game-logic";
+import { generateRoomCode } from "@/lib/game-logic";
 import crypto from "crypto";
 
 export async function POST() {
   const supabase = createServerClient();
   const roomCode = generateRoomCode();
   const hostToken = crypto.randomBytes(24).toString("hex");
-  const eventDeck = shuffleDeck();
 
   const { data, error } = await supabase
     .from("games")
     .insert({
       room_code: roomCode,
       host_token: hostToken,
-      event_deck: eventDeck,
       status: "lobby",
-      current_event_index: -1,
+      current_phase: 0,
+      current_round: 0,
+      round_supply: 0,
+      phase_results: [],
     })
     .select()
     .single();

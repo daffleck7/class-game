@@ -41,5 +41,11 @@ describe("POST /api/games", () => {
     expect(body.room_code).toBeTruthy();
     expect(body.host_token).toBeTruthy();
     expect(mockInsert).toHaveBeenCalledTimes(1);
+
+    const insertArg = mockInsert.mock.calls[0][0];
+    expect(insertArg.status).toBe("lobby");
+    expect(insertArg.current_phase).toBe(0);
+    expect(insertArg.current_round).toBe(0);
+    expect(insertArg.phase_results).toEqual([]);
   });
 });
