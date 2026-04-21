@@ -69,7 +69,8 @@ export default function HostPage({ params }: { params: Promise<{ roomCode: strin
       .from("players")
       .select("id, name, team, current_bid, total_surplus")
       .eq("game_id", game.id)
-      .order("created_at");
+      .order("created_at")
+      .returns<Player[]>();
     if (data) {
       setPlayers(data);
     }

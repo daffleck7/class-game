@@ -51,7 +51,7 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
       .from("players")
       .select("current_bid, total_surplus")
       .eq("id", playerId)
-      .single();
+      .single<{ current_bid: number | null; total_surplus: number }>();
     if (data) {
       setCurrentBid(data.current_bid);
       setTotalSurplus(data.total_surplus);
@@ -74,7 +74,8 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
     const { data: allPlayers } = await supabase
       .from("players")
       .select("id, current_bid")
-      .eq("game_id", game.id);
+      .eq("game_id", game.id)
+      .returns<Array<{ id: string; current_bid: number | null }>>();
 
     if (!allPlayers) return;
 
@@ -93,7 +94,8 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
       .from("players")
       .select("id, team, total_surplus")
       .eq("game_id", game.id)
-      .order("total_surplus", { ascending: false });
+      .order("total_surplus", { ascending: false })
+      .returns<Array<{ id: string; team: number; total_surplus: number }>>();
 
     if (!allPlayers) return;
 
