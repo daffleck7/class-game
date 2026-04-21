@@ -170,7 +170,7 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-red-400 text-xl">{error}</p>
+        <p className="text-wine-600 text-xl">{error}</p>
       </div>
     );
   }
@@ -178,7 +178,7 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
   if (!game) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-400">Loading...</p>
+        <p className="text-cream-400">Loading...</p>
       </div>
     );
   }
@@ -190,9 +190,9 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
   if (game.status === "lobby") {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6 gap-4">
-        <h1 className="text-3xl font-bold">Market Mayhem</h1>
-        <p className="text-gray-400">Welcome, {playerName}! (Team {playerTeam})</p>
-        <p className="text-gray-500">Waiting for host to start...</p>
+        <h1 className="text-3xl font-bold font-display">Market Mayhem</h1>
+        <p className="text-cream-400">Welcome, {playerName}! (Team {playerTeam})</p>
+        <p className="text-cream-500">Waiting for host to start...</p>
       </div>
     );
   }
@@ -255,7 +255,7 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
 
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-400">Loading results...</p>
+        <p className="text-cream-400">Loading results...</p>
       </div>
     );
   }

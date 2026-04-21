@@ -25,14 +25,14 @@ export default function HostLobby({ roomCode, players, onStart }: HostLobbyProps
 
   return (
     <div className="flex flex-col items-center gap-8 p-8">
-      <h1 className="text-4xl font-bold">Market Mayhem</h1>
+      <h1 className="text-4xl font-bold font-display">Market Mayhem</h1>
 
       <div className="flex flex-col sm:flex-row items-center gap-8">
         <QRCode roomCode={roomCode} />
         <div className="text-center">
-          <p className="text-gray-400 text-sm">Room Code</p>
+          <p className="text-cream-400 text-sm">Room Code</p>
           <p className="text-5xl font-mono font-bold tracking-wider">{roomCode}</p>
-          <p className="text-gray-400 mt-4">{players.length} player{players.length !== 1 ? "s" : ""} joined</p>
+          <p className="text-cream-400 mt-4">{players.length} player{players.length !== 1 ? "s" : ""} joined</p>
         </div>
       </div>
 
@@ -40,15 +40,15 @@ export default function HostLobby({ roomCode, players, onStart }: HostLobbyProps
         {TEAMS.map((team) => (
           <div
             key={team}
-            className={`border-l-4 ${TEAM_BORDER_COLORS[team]} bg-gray-900 rounded-lg p-4`}
+            className={`border-l-4 ${TEAM_BORDER_COLORS[team]} bg-mahogany-900 rounded-lg p-4`}
           >
-            <h3 className="font-semibold text-sm text-gray-400 mb-2">{TEAM_NAMES[team]}</h3>
+            <h3 className="font-semibold text-sm text-cream-400 mb-2">{TEAM_NAMES[team]}</h3>
             <div className="space-y-1">
               {(playersByTeam.get(team) || []).map((p) => (
                 <p key={p.id} className="text-sm">{p.name}</p>
               ))}
               {!(playersByTeam.get(team) || []).length && (
-                <p className="text-xs text-gray-600 italic">No players yet</p>
+                <p className="text-xs text-mahogany-500 italic">No players yet</p>
               )}
             </div>
           </div>
@@ -58,7 +58,7 @@ export default function HostLobby({ roomCode, players, onStart }: HostLobbyProps
       <button
         onClick={onStart}
         disabled={players.length < 2}
-        className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-bold text-xl py-4 px-12 rounded-xl transition-colors"
+        className="bg-gold-500 hover:bg-gold-400 disabled:bg-mahogany-700 disabled:text-mahogany-500 text-cream-100 font-bold text-xl py-4 px-12 rounded-xl transition-colors"
       >
         Start Game ({players.length} players)
       </button>

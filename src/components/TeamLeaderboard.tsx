@@ -10,7 +10,7 @@ interface TeamLeaderboardProps {
 
 export default function TeamLeaderboard({ teamScores, highlight }: TeamLeaderboardProps) {
   if (teamScores.length === 0) {
-    return <p className="text-gray-500 text-center">No teams yet</p>;
+    return <p className="text-cream-500 text-center">No teams yet</p>;
   }
 
   const maxScore = Math.max(...teamScores.map((t) => t.averageScore), 1);
@@ -21,19 +21,19 @@ export default function TeamLeaderboard({ teamScores, highlight }: TeamLeaderboa
         <div
           key={ts.team}
           className={`flex items-center gap-3 p-3 rounded-lg ${
-            highlight && index === 0 ? "bg-yellow-900/30 ring-2 ring-yellow-500" : "bg-gray-900"
+            highlight && index === 0 ? "bg-gold-600/30 ring-2 ring-gold-400" : "bg-mahogany-900"
           }`}
         >
-          <span className="text-2xl font-bold text-gray-500 w-8">#{index + 1}</span>
+          <span className="text-2xl font-bold text-cream-500 w-8">#{index + 1}</span>
           <div
             className={`w-3 h-10 rounded ${TEAM_COLORS[ts.team]}`}
           />
           <div className="flex-1">
             <div className="flex justify-between items-baseline">
               <span className="font-semibold">{TEAM_NAMES[ts.team]}</span>
-              <span className="text-sm text-gray-400">{ts.playerCount} players</span>
+              <span className="text-sm text-cream-400">{ts.playerCount} players</span>
             </div>
-            <div className="w-full bg-gray-800 rounded-full h-2 mt-1">
+            <div className="w-full bg-mahogany-800 rounded-full h-2 mt-1">
               <div
                 className={`${TEAM_COLORS[ts.team]} h-2 rounded-full transition-all duration-700`}
                 style={{ width: `${Math.max((ts.averageScore / maxScore) * 100, 2)}%` }}

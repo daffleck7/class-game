@@ -135,7 +135,7 @@ export default function HostPage({ params }: { params: Promise<{ roomCode: strin
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-red-400 text-xl">{error}</p>
+        <p className="text-wine-600 text-xl">{error}</p>
       </div>
     );
   }
@@ -143,7 +143,7 @@ export default function HostPage({ params }: { params: Promise<{ roomCode: strin
   if (!game) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-400 text-xl">Loading...</p>
+        <p className="text-cream-400 text-xl">Loading...</p>
       </div>
     );
   }
@@ -188,10 +188,10 @@ export default function HostPage({ params }: { params: Promise<{ roomCode: strin
   if (game.status === "revealing" && !revealData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-gray-400">Bids were revealed but data was lost. Click to re-reveal.</p>
+        <p className="text-cream-400">Bids were revealed but data was lost. Click to re-reveal.</p>
         <button
           onClick={() => handleAdvance("reveal")}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-8 rounded-xl"
+          className="bg-gold-500 hover:bg-gold-400 text-cream-100 font-bold py-3 px-8 rounded-xl"
         >
           Re-reveal Bids
         </button>

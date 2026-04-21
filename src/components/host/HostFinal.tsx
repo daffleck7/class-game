@@ -33,31 +33,31 @@ export default function HostFinal({ phaseResults, playerRankings, teamScores }: 
 
   return (
     <div className="flex flex-col items-center p-8 gap-10">
-      <h1 className="text-4xl font-bold">Market Mayhem — Results</h1>
+      <h1 className="text-4xl font-bold font-display">Market Mayhem — Results</h1>
 
       {/* Surplus Comparison Chart */}
       <div className="w-full max-w-3xl">
         <h2 className="text-xl font-semibold mb-4 text-center">Surplus by Market Structure</h2>
         <div className="grid grid-cols-3 gap-6">
           {phaseResults.map((result) => (
-            <div key={result.phase} className="bg-gray-900 rounded-xl p-4 text-center">
-              <h3 className="font-semibold text-indigo-400 mb-4">{PHASE_LABELS[result.phase]}</h3>
+            <div key={result.phase} className="bg-mahogany-900 rounded-xl p-4 text-center">
+              <h3 className="font-semibold text-gold-400 mb-4">{PHASE_LABELS[result.phase]}</h3>
               <div className="flex justify-center gap-4 items-end h-40">
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-sm font-bold text-orange-400">${result.producer_surplus}</span>
+                  <span className="text-sm font-bold text-wine-600">${result.producer_surplus}</span>
                   <div
-                    className="w-12 bg-orange-500 rounded-t"
+                    className="w-12 bg-wine-600 rounded-t"
                     style={{ height: `${(result.producer_surplus / maxSurplus) * 120}px` }}
                   />
-                  <span className="text-xs text-gray-400">Producer</span>
+                  <span className="text-xs text-cream-400">Producer</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-sm font-bold text-emerald-400">${result.consumer_surplus}</span>
+                  <span className="text-sm font-bold text-gold-400">${result.consumer_surplus}</span>
                   <div
-                    className="w-12 bg-emerald-500 rounded-t"
+                    className="w-12 bg-gold-400 rounded-t"
                     style={{ height: `${(result.consumer_surplus / maxSurplus) * 120}px` }}
                   />
-                  <span className="text-xs text-gray-400">Consumer</span>
+                  <span className="text-xs text-cream-400">Consumer</span>
                 </div>
               </div>
             </div>
@@ -68,16 +68,16 @@ export default function HostFinal({ phaseResults, playerRankings, teamScores }: 
       {/* Individual Leaderboard */}
       <div className="w-full max-w-lg">
         <h2 className="text-xl font-semibold mb-4 text-center">Individual Leaderboard</h2>
-        <div className="bg-gray-900 rounded-xl overflow-hidden">
+        <div className="bg-mahogany-900 rounded-xl overflow-hidden">
           {playerRankings.slice(0, 10).map((player, index) => (
             <div
               key={player.name + player.team}
-              className={`flex items-center justify-between px-4 py-3 border-b border-gray-800 ${
-                index === 0 ? "bg-yellow-900/20" : ""
+              className={`flex items-center justify-between px-4 py-3 border-b border-mahogany-800 ${
+                index === 0 ? "bg-gold-600/20" : ""
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="text-gray-500 w-6 text-right font-bold">#{index + 1}</span>
+                <span className="text-cream-500 w-6 text-right font-bold">#{index + 1}</span>
                 <div className={`w-2 h-6 rounded ${TEAM_COLORS[player.team]}`} />
                 <span className="font-medium">{player.name}</span>
               </div>
@@ -90,20 +90,20 @@ export default function HostFinal({ phaseResults, playerRankings, teamScores }: 
       {/* Team Leaderboard */}
       <div className="w-full max-w-lg">
         <h2 className="text-xl font-semibold mb-4 text-center">Team Leaderboard</h2>
-        <div className="bg-gray-900 rounded-xl overflow-hidden">
+        <div className="bg-mahogany-900 rounded-xl overflow-hidden">
           {teamScores.map((ts, index) => (
             <div
               key={ts.team}
-              className={`flex items-center justify-between px-4 py-3 border-b border-gray-800 ${
-                index === 0 ? "bg-yellow-900/20" : ""
+              className={`flex items-center justify-between px-4 py-3 border-b border-mahogany-800 ${
+                index === 0 ? "bg-gold-600/20" : ""
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="text-gray-500 w-6 text-right font-bold">#{index + 1}</span>
+                <span className="text-cream-500 w-6 text-right font-bold">#{index + 1}</span>
                 <div className={`w-3 h-8 rounded ${TEAM_COLORS[ts.team]}`} />
                 <div>
                   <span className="font-semibold">{TEAM_NAMES[ts.team]}</span>
-                  <span className="text-gray-400 text-sm ml-2">({ts.playerCount} players)</span>
+                  <span className="text-cream-400 text-sm ml-2">({ts.playerCount} players)</span>
                 </div>
               </div>
               <span className="text-xl font-bold">${ts.averageScore} avg</span>

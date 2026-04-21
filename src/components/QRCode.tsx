@@ -17,7 +17,7 @@ export default function QRCode({ roomCode }: QRCodeProps) {
       <div className="bg-white p-4 rounded-xl">
         <QRCodeSVG value={url} size={200} />
       </div>
-      <p className="text-gray-400 text-sm break-all text-center max-w-xs">{url}</p>
+      <p className="text-cream-400 text-sm break-all text-center max-w-xs">{url}</p>
     </div>
   );
 }

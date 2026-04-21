@@ -61,28 +61,28 @@ export default function PlayerBidding({
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 gap-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold mb-1">Market Mayhem</h1>
-        <h2 className="text-lg text-indigo-400 font-semibold">
+        <h1 className="text-2xl font-bold mb-1 font-display">Market Mayhem</h1>
+        <h2 className="text-lg text-gold-400 font-semibold">
           {PHASE_LABELS[phase]} — Round {round + 1} of 3
         </h2>
-        <p className="text-gray-400 text-sm mt-1">
+        <p className="text-cream-400 text-sm mt-1">
           {supply} units available for {playerCount} players
         </p>
         {round < 2 && (
-          <p className="text-gray-500 text-xs mt-1">Price discovery round — results revealed after</p>
+          <p className="text-cream-500 text-xs mt-1">Price discovery round — results revealed after</p>
         )}
         {round === 2 && (
-          <p className="text-yellow-400 text-xs mt-1 font-semibold">Final round — this bid counts!</p>
+          <p className="text-gold-400 text-xs mt-1 font-semibold">Final round — this bid counts!</p>
         )}
       </div>
 
-      <div className="text-center text-gray-400 text-sm">
-        Your valuation: <span className="text-white font-bold">$100</span>
+      <div className="text-center text-cream-400 text-sm">
+        Your valuation: <span className="text-cream-100 font-bold">$100</span>
       </div>
 
       <form onSubmit={handleSubmit} className="w-full max-w-xs space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-1">Your Bid ($)</label>
+          <label className="block text-sm font-medium text-cream-400 mb-1">Your Bid ($)</label>
           <input
             type="number"
             value={bidInput}
@@ -90,12 +90,12 @@ export default function PlayerBidding({
             placeholder="Enter bid"
             min="1"
             step="1"
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg py-4 px-4 text-center text-3xl font-mono focus:outline-none focus:border-indigo-500"
+            className="w-full bg-mahogany-800 border border-mahogany-700 rounded-lg py-4 px-4 text-center text-3xl font-mono focus:outline-none focus:border-gold-500"
           />
         </div>
 
         {surplusPreview !== null && (
-          <div className={`text-center text-lg font-semibold ${surplusPreview >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+          <div className={`text-center text-lg font-semibold ${surplusPreview >= 0 ? "text-gold-400" : "text-wine-600"}`}>
             Consumer surplus if you win: ${surplusPreview}
           </div>
         )}
@@ -103,17 +103,17 @@ export default function PlayerBidding({
         <button
           type="submit"
           disabled={submitting || !isValidBid}
-          className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors text-lg"
+          className="w-full bg-gold-500 hover:bg-gold-400 disabled:bg-mahogany-700 text-cream-100 font-semibold py-4 px-6 rounded-lg transition-colors text-lg"
         >
           {submitting ? "Submitting..." : currentBid ? `Update Bid (was $${currentBid})` : "Submit Bid"}
         </button>
 
-        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+        {error && <p className="text-wine-600 text-sm text-center">{error}</p>}
       </form>
 
       {currentBid && (
-        <p className="text-gray-400 text-sm">
-          Current bid: <span className="text-white font-bold">${currentBid}</span>
+        <p className="text-cream-400 text-sm">
+          Current bid: <span className="text-cream-100 font-bold">${currentBid}</span>
         </p>
       )}
     </div>

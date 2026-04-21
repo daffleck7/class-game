@@ -1,4 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --color-mahogany-950: #1a0e0a;
+  --color-mahogany-900: #2d1810;
+  --color-mahogany-800: #3d2318;
+  --color-mahogany-700: #4e2e20;
+  --color-mahogany-600: #5e3a28;
+  --color-mahogany-500: #7a4d35;
+  --color-cream-100: #fdf6ee;
+  --color-cream-200: #f5e6d3;
+  --color-cream-300: #e8d1b8;
+  --color-cream-400: #c4a882;
+  --color-cream-500: #a08563;
+  --color-gold-400: #d4a843;
+  --color-gold-500: #b8922e;
+  --color-gold-600: #9a7a24;
+  --color-wine-600: #722f37;
+  --color-wine-700: #5c252c;
+  --color-wine-800: #461b22;
+  --color-wine-900: #301318;
+  --color-forest-800: #1a3a2a;
+  --color-forest-900: #0f2419;
+}
 
 @keyframes fade-in {
   from {
@@ -26,4 +50,8 @@
 
 .animate-spin-slow {
   animation: spin-slow 2s linear infinite;
+}
+
+.font-display {
+  font-family: 'Playfair Display', Georgia, serif;
 }

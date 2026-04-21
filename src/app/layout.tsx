@@ -13,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-gray-950 text-white">{children}</body>
+      <body className="min-h-screen bg-mahogany-950 text-cream-100" style={{ fontFamily: "'Inter', sans-serif" }}>{children}</body>
     </html>
   );
 }

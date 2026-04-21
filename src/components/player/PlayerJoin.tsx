@@ -38,28 +38,28 @@ export default function PlayerJoin({ roomCode, onJoined }: PlayerJoinProps) {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
-      <h1 className="text-3xl font-bold mb-2">Market Mayhem</h1>
-      <p className="text-gray-400 mb-8">Room: {roomCode}</p>
+      <h1 className="text-3xl font-bold mb-2 font-display">Market Mayhem</h1>
+      <p className="text-cream-400 mb-8">Room: {roomCode}</p>
 
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-1">Your Name</label>
+          <label className="block text-sm font-medium text-cream-400 mb-1">Your Name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Enter your name"
             maxLength={20}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 px-4 text-lg focus:outline-none focus:border-indigo-500"
+            className="w-full bg-mahogany-800 border border-mahogany-700 rounded-lg py-3 px-4 text-lg focus:outline-none focus:border-gold-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-1">Choose Your Team</label>
+          <label className="block text-sm font-medium text-cream-400 mb-1">Choose Your Team</label>
           <select
             value={team}
             onChange={(e) => setTeam(parseInt(e.target.value))}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 px-4 text-lg focus:outline-none focus:border-indigo-500"
+            className="w-full bg-mahogany-800 border border-mahogany-700 rounded-lg py-3 px-4 text-lg focus:outline-none focus:border-gold-500"
           >
             {TEAMS.map((t) => (
               <option key={t} value={t}>{TEAM_NAMES[t]}</option>
@@ -70,12 +70,12 @@ export default function PlayerJoin({ roomCode, onJoined }: PlayerJoinProps) {
         <button
           type="submit"
           disabled={loading || !name.trim()}
-          className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors text-lg"
+          className="w-full bg-gold-500 hover:bg-gold-400 disabled:bg-mahogany-700 text-cream-100 font-semibold py-3 px-6 rounded-lg transition-colors text-lg"
         >
           {loading ? "Joining..." : "Join Game"}
         </button>
 
-        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+        {error && <p className="text-wine-600 text-sm text-center">{error}</p>}
       </form>
     </div>
   );
