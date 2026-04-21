@@ -31,9 +31,9 @@ export default function PlayerBidding({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const bidValue = parseInt(bidInput, 10);
-  const isValidBid = !isNaN(bidValue) && bidValue > 0 && Number.isInteger(bidValue);
-  const surplusPreview = isValidBid ? 100 - bidValue : null;
+  const bidValue = parseFloat(bidInput);
+  const isValidBid = !isNaN(bidValue) && bidValue >= 0;
+  const surplusPreview = isValidBid ? Math.round((100 - bidValue) * 100) / 100 : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -88,8 +88,8 @@ export default function PlayerBidding({
             value={bidInput}
             onChange={(e) => setBidInput(e.target.value)}
             placeholder="Enter bid"
-            min="1"
-            step="1"
+            min="0"
+            step="0.01"
             className="w-full bg-mahogany-800 border border-mahogany-700 rounded-lg py-4 px-4 text-center text-3xl font-mono focus:outline-none focus:border-gold-500"
           />
         </div>

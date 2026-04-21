@@ -23,14 +23,8 @@ describe("POST /api/games/[roomCode]/bid", () => {
     vi.clearAllMocks();
   });
 
-  it("rejects non-positive bid", async () => {
-    const request = createRequest({ player_id: "p1", bid: 0 });
-    const response = await POST(request, { params: Promise.resolve({ roomCode: "ABC123" }) });
-    expect(response.status).toBe(400);
-  });
-
-  it("rejects non-integer bid", async () => {
-    const request = createRequest({ player_id: "p1", bid: 50.5 });
+  it("rejects negative bid", async () => {
+    const request = createRequest({ player_id: "p1", bid: -5 });
     const response = await POST(request, { params: Promise.resolve({ roomCode: "ABC123" }) });
     expect(response.status).toBe(400);
   });

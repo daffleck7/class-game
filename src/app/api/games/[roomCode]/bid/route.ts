@@ -24,9 +24,12 @@ export async function POST(
     return NextResponse.json({ error: "player_id is required" }, { status: 400 });
   }
 
-  if (typeof body.bid !== "number" || body.bid <= 0 || !Number.isInteger(body.bid)) {
-    return NextResponse.json({ error: "Bid must be a positive whole dollar amount" }, { status: 400 });
+  if (typeof body.bid !== "number" || body.bid < 0) {
+    return NextResponse.json({ error: "Bid must be $0 or more" }, { status: 400 });
   }
+
+  // Round to 2 decimal places to avoid floating point issues
+  body.bid = Math.round(body.bid * 100) / 100;
 
   const supabase = createServerClient();
 

@@ -88,9 +88,9 @@ export async function POST(
       return NextResponse.json({ error: "Failed to fetch players" }, { status: 500 });
     }
 
-    // Players who didn't bid are excluded from the auction — they can't win
-    const bidders = players.filter((p) => p.current_bid !== null && p.current_bid > 0);
-    const nonBidders = players.filter((p) => p.current_bid === null || p.current_bid <= 0);
+    // Players who didn't submit a bid are excluded — they can't win
+    const bidders = players.filter((p) => p.current_bid !== null);
+    const nonBidders = players.filter((p) => p.current_bid === null);
 
     const bids = bidders.map((p) => ({
       player_id: p.id,
