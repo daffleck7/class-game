@@ -23,9 +23,25 @@ interface Game {
 export default function PlayPage({ params }: { params: Promise<{ roomCode: string }> }) {
   const { roomCode } = use(params);
   const [game, setGame] = useState<Game | null>(null);
-  const [playerId, setPlayerId] = useState<string | null>(null);
-  const [playerName, setPlayerName] = useState("");
-  const [playerTeam, setPlayerTeam] = useState(1);
+  const [playerId, setPlayerId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem(`player_id_${roomCode}`);
+    }
+    return null;
+  });
+  const [playerName, setPlayerName] = useState(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem(`player_name_${roomCode}`) || "";
+    }
+    return "";
+  });
+  const [playerTeam, setPlayerTeam] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem(`player_team_${roomCode}`);
+      return stored ? parseInt(stored, 10) : 1;
+    }
+    return 1;
+  });
   const [currentBid, setCurrentBid] = useState<number | null>(null);
   const [totalSurplus, setTotalSurplus] = useState(0);
   const [playerCount, setPlayerCount] = useState(0);
@@ -165,6 +181,9 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
     setPlayerId(id);
     setPlayerName(name);
     setPlayerTeam(team);
+    sessionStorage.setItem(`player_id_${roomCode}`, id);
+    sessionStorage.setItem(`player_name_${roomCode}`, name);
+    sessionStorage.setItem(`player_team_${roomCode}`, team.toString());
   }
 
   if (error) {

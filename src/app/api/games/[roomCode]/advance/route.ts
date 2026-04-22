@@ -77,8 +77,8 @@ export async function POST(
     return NextResponse.json({ status: "bidding", phase: 0, round: 0, supply });
   }
 
-  // BIDDING -> REVEALING (reveal bids)
-  if (game.status === "bidding" && body.action === "reveal") {
+  // BIDDING -> REVEALING (reveal bids), also allows re-reveal if already revealing
+  if ((game.status === "bidding" || game.status === "revealing") && body.action === "reveal") {
     const { data: players } = await supabase
       .from("players")
       .select("id, name, team, current_bid")
@@ -113,8 +113,9 @@ export async function POST(
       });
     }
 
-    // If this is round 3 (index 2), store phase results and update surplus
-    if (game.current_round === 2) {
+    // If this is round 3 (index 2) and first reveal (not re-reveal), store phase results and update surplus
+    const isReReveal = game.status === "revealing";
+    if (game.current_round === 2 && !isReReveal) {
       const phaseResults = [...(game.phase_results as unknown[]), {
         phase: game.current_phase,
         supply: game.round_supply,
@@ -153,7 +154,7 @@ export async function POST(
           })
         );
       }
-    } else {
+    } else if (!isReReveal) {
       await supabase
         .from("games")
         .update({ status: "revealing" })
