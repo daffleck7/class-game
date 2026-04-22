@@ -35,34 +35,35 @@ export default function HostReveal({
   onFinish,
 }: HostRevealProps) {
   return (
-    <div className="flex flex-col items-center p-8 gap-6">
+    <div className="flex flex-col items-center p-8 gap-6 bg-texture min-h-screen">
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-1 font-display">Market Mayhem</h1>
         <h2 className="text-xl text-gold-400 font-semibold">
           {PHASE_LABELS[phase]} — Round {round + 1} of 3
         </h2>
+        <div className="divider-ornate mt-3 max-w-sm mx-auto">
+          <span className="text-gold-500 text-xs">◆</span>
+        </div>
       </div>
 
       <div className="w-full max-w-2xl">
-        <div className="bg-mahogany-900 rounded-xl overflow-hidden">
+        <div className="card-ornate overflow-hidden">
           {sortedBids.map((bid, index) => (
             <div key={bid.player_id}>
               {index === supply && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-wine-800/50">
-                  <div className="flex-1 h-px bg-wine-600" />
-                  <span className="text-wine-600 text-xs font-semibold uppercase tracking-wider">
+                <div className="buy-line">
+                  <span className="text-cream-100 text-xs font-semibold uppercase tracking-wider">
                     Buy Line — {supply} units available
                   </span>
-                  <div className="flex-1 h-px bg-wine-600" />
                 </div>
               )}
               <div
                 className={`flex items-center justify-between px-4 py-3 border-b border-mahogany-800 ${
-                  bid.won ? "bg-gold-600/20" : "bg-mahogany-900"
+                  bid.won ? "bid-row-winner" : "bid-row-loser"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-cream-500 w-6 text-right text-sm">{index + 1}</span>
+                  <span className="lot-number">{index + 1}</span>
                   <div className={`w-2 h-6 rounded ${TEAM_COLORS[bid.team]}`} />
                   <span className="font-medium">{bid.name}</span>
                 </div>
@@ -86,23 +87,28 @@ export default function HostReveal({
       </div>
 
       {isFinalRound && (
-        <div className="flex gap-8 text-center">
-          <div className="bg-mahogany-900 rounded-xl p-6 min-w-[200px]">
-            <p className="text-cream-400 text-sm mb-1">Producer Surplus</p>
-            <p className="text-3xl font-bold text-wine-600">${producerSurplus}</p>
+        <>
+          <div className="divider-ornate w-full max-w-2xl">
+            <span className="text-gold-500 text-xs">◆</span>
           </div>
-          <div className="bg-mahogany-900 rounded-xl p-6 min-w-[200px]">
-            <p className="text-cream-400 text-sm mb-1">Consumer Surplus</p>
-            <p className="text-3xl font-bold text-gold-400">${consumerSurplus}</p>
+          <div className="flex gap-8 text-center">
+            <div className="card-framed p-6 min-w-[200px]">
+              <p className="text-cream-400 text-sm mb-1 tracking-widest uppercase">Producer Surplus</p>
+              <p className="text-3xl font-bold text-wine-600">${producerSurplus}</p>
+            </div>
+            <div className="card-framed p-6 min-w-[200px]">
+              <p className="text-cream-400 text-sm mb-1 tracking-widest uppercase">Consumer Surplus</p>
+              <p className="text-3xl font-bold text-gold-400">${consumerSurplus}</p>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       <div>
         {!isFinalRound && (
           <button
             onClick={onNextRound}
-            className="bg-gold-500 hover:bg-gold-400 text-cream-100 font-bold text-xl py-4 px-12 rounded-xl transition-colors"
+            className="btn-gold text-xl py-4 px-12 rounded-xl"
           >
             Next Round
           </button>
@@ -110,7 +116,7 @@ export default function HostReveal({
         {isFinalRound && !isLastPhase && (
           <button
             onClick={onNextPhase}
-            className="bg-gold-500 hover:bg-gold-400 text-cream-100 font-bold text-xl py-4 px-12 rounded-xl transition-colors"
+            className="btn-gold text-xl py-4 px-12 rounded-xl"
           >
             Next Phase: {PHASE_LABELS[phase + 1]}
           </button>
@@ -118,7 +124,7 @@ export default function HostReveal({
         {isFinalRound && isLastPhase && (
           <button
             onClick={onFinish}
-            className="bg-gold-600 hover:bg-gold-500 text-cream-100 font-bold text-xl py-4 px-12 rounded-xl transition-colors"
+            className="btn-gold text-xl py-4 px-12 rounded-xl"
           >
             See Final Results
           </button>

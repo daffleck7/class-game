@@ -25,20 +25,26 @@ export default function HostBidding({ phase, round, supply, players, onReveal }:
   const totalPlayers = players.length;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 gap-8">
+    <div className="flex flex-col items-center justify-center min-h-screen p-8 gap-8 bg-texture">
       <div className="text-center">
+        <div className="lot-number mx-auto mb-3">
+          {phase + 1}
+        </div>
         <h1 className="text-4xl font-bold mb-2 font-display">Market Mayhem</h1>
         <h2 className="text-2xl text-gold-400 font-semibold">
           {PHASE_LABELS[phase]} — Round {round + 1} of 3
         </h2>
-        <p className="text-cream-400 mt-2">
+        <div className="divider-ornate mt-3 max-w-sm mx-auto">
+          <span className="text-gold-500 text-xs">◆</span>
+        </div>
+        <p className="text-cream-400 mt-3">
           Supply: <span className="text-cream-100 font-bold">{supply} units</span> for{" "}
           <span className="text-cream-100 font-bold">{totalPlayers} players</span>
         </p>
       </div>
 
-      <div className="bg-mahogany-900 rounded-xl p-8 text-center min-w-[300px]">
-        <p className="text-cream-400 text-sm mb-2">Bids Received</p>
+      <div className="card-framed p-8 text-center min-w-[300px]">
+        <p className="text-cream-400 text-sm mb-2 tracking-widest uppercase">Bids Received</p>
         <p className="text-6xl font-bold">
           {bidsIn} <span className="text-3xl text-cream-500">/ {totalPlayers}</span>
         </p>
@@ -46,7 +52,7 @@ export default function HostBidding({ phase, round, supply, players, onReveal }:
 
       <button
         onClick={onReveal}
-        className="bg-gold-500 hover:bg-gold-400 text-cream-100 font-bold text-xl py-4 px-12 rounded-xl transition-colors"
+        className="btn-gold text-xl py-4 px-12 rounded-xl"
       >
         Reveal Bids
       </button>

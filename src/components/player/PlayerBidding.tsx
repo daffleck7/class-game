@@ -59,13 +59,16 @@ export default function PlayerBidding({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 gap-6">
+    <div className="flex flex-col items-center justify-center min-h-screen p-6 gap-6 bg-texture">
       <div className="text-center">
         <h1 className="text-2xl font-bold mb-1 font-display">Market Mayhem</h1>
         <h2 className="text-lg text-gold-400 font-semibold">
           {PHASE_LABELS[phase]} — Round {round + 1} of 3
         </h2>
-        <p className="text-cream-400 text-sm mt-1">
+        <div className="divider-ornate mt-2 max-w-[200px] mx-auto">
+          <span className="text-gold-500 text-xs">◆</span>
+        </div>
+        <p className="text-cream-400 text-sm mt-2">
           {supply} units available for {playerCount} players
         </p>
         {round < 2 && (
@@ -76,13 +79,14 @@ export default function PlayerBidding({
         )}
       </div>
 
-      <div className="text-center text-cream-400 text-sm">
-        Your valuation: <span className="text-cream-100 font-bold">$100</span>
+      <div className="lot-number-placard flex items-center gap-3 bg-mahogany-800 border border-gold-600 rounded px-4 py-2">
+        <span className="text-gold-500 text-xs tracking-widest uppercase">Your Valuation</span>
+        <span className="text-cream-100 font-bold text-lg font-mono">$100</span>
       </div>
 
-      <form onSubmit={handleSubmit} className="w-full max-w-xs space-y-4">
+      <form onSubmit={handleSubmit} className="card-framed w-full max-w-xs p-6 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-cream-400 mb-1">Your Bid ($)</label>
+          <label className="block text-sm font-medium text-cream-400 mb-1 tracking-wider uppercase">Your Bid ($)</label>
           <input
             type="number"
             value={bidInput}
@@ -90,7 +94,7 @@ export default function PlayerBidding({
             placeholder="Enter bid"
             min="0"
             step="0.01"
-            className="w-full bg-mahogany-800 border border-mahogany-700 rounded-lg py-4 px-4 text-center text-3xl font-mono focus:outline-none focus:border-gold-500"
+            className="input-auction w-full rounded-lg py-4 px-4 text-center text-3xl font-mono"
           />
         </div>
 
@@ -103,7 +107,7 @@ export default function PlayerBidding({
         <button
           type="submit"
           disabled={submitting || !isValidBid}
-          className="w-full bg-gold-500 hover:bg-gold-400 disabled:bg-mahogany-700 text-cream-100 font-semibold py-4 px-6 rounded-lg transition-colors text-lg"
+          className="btn-gold w-full py-4 px-6 rounded-lg text-lg"
         >
           {submitting ? "Submitting..." : currentBid ? `Update Bid (was $${currentBid})` : "Submit Bid"}
         </button>

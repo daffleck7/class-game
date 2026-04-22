@@ -14,7 +14,7 @@ export default function QRCode({ roomCode }: QRCodeProps) {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="bg-white p-4 rounded-xl">
+      <div className="card-framed p-4" style={{ background: "white" }}>
         <QRCodeSVG value={url} size={200} />
       </div>
       <p className="text-cream-400 text-sm break-all text-center max-w-xs">{url}</p>

@@ -33,29 +33,34 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 gap-12">
+    <main className="flex min-h-screen flex-col items-center justify-center p-6 gap-10 bg-texture">
       <div className="text-center">
-        <h1 className="text-5xl font-bold mb-2 font-display">Market Mayhem</h1>
-        <p className="text-cream-400 text-lg">The classroom auction game</p>
+        <p className="text-gold-500 text-sm tracking-[0.3em] uppercase mb-3">Welcome to</p>
+        <h1 className="text-6xl font-bold font-display">Market Mayhem</h1>
+        <p className="font-display-italic text-cream-400 text-lg mt-2">The Classroom Auction House</p>
+        <div className="divider-ornate mt-4 max-w-xs mx-auto">
+          <span className="text-gold-500 text-xs">◆</span>
+        </div>
+        <p className="text-cream-500 text-xs tracking-widest uppercase mt-2">Est. 2026</p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-8 w-full max-w-xl">
-        <div className="flex-1 bg-mahogany-900 rounded-xl p-6 text-center">
-          <h2 className="text-xl font-semibold mb-4">Host a Game</h2>
+        <div className="card-framed flex-1 p-6 text-center">
+          <h2 className="text-xl font-semibold mb-4 font-display">Host a Game</h2>
           <p className="text-cream-400 text-sm mb-6">
             Create a new game room and display it on the big screen.
           </p>
           <button
             onClick={handleHostGame}
             disabled={loading}
-            className="w-full bg-gold-500 hover:bg-gold-400 disabled:bg-mahogany-700 text-cream-100 font-semibold py-3 px-6 rounded-lg transition-colors"
+            className="btn-gold w-full py-3 px-6 rounded-lg"
           >
             {loading ? "Creating..." : "Create Game"}
           </button>
         </div>
 
-        <div className="flex-1 bg-mahogany-900 rounded-xl p-6 text-center">
-          <h2 className="text-xl font-semibold mb-4">Join a Game</h2>
+        <div className="card-framed flex-1 p-6 text-center">
+          <h2 className="text-xl font-semibold mb-4 font-display">Join a Game</h2>
           <p className="text-cream-400 text-sm mb-6">
             Enter the room code shown on screen or scan the QR code.
           </p>
@@ -66,11 +71,11 @@ export default function Home() {
               onChange={(e) => setJoinCode(e.target.value)}
               placeholder="ROOM CODE"
               maxLength={6}
-              className="w-full bg-mahogany-800 border border-mahogany-700 rounded-lg py-3 px-4 text-center text-lg font-mono uppercase placeholder-cream-500 focus:outline-none focus:border-gold-500"
+              className="input-auction w-full rounded-lg py-3 px-4 text-center text-lg font-mono uppercase placeholder-cream-500"
             />
             <button
               type="submit"
-              className="w-full bg-gold-600 hover:bg-gold-500 text-cream-100 font-semibold py-3 px-6 rounded-lg transition-colors"
+              className="btn-gold w-full py-3 px-6 rounded-lg"
             >
               Join
             </button>
