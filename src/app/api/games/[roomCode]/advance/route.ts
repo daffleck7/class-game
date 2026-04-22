@@ -128,22 +128,30 @@ export async function POST(
         .update({ status: "revealing", phase_results: phaseResults })
         .eq("id", game.id);
 
-      // Update each winner's total_surplus
-      for (const resolvedBid of result.sorted_bids) {
-        if (resolvedBid.won && resolvedBid.surplus !== 0) {
-          const { data: playerData } = await supabase
-            .from("players")
-            .select("total_surplus")
-            .eq("id", resolvedBid.player_id)
-            .single();
-
-          if (playerData) {
-            await supabase
+      // Batch-update each winner's total_surplus in parallel
+      const winnersToUpdate = result.sorted_bids.filter((b) => b.won && b.surplus !== 0);
+      if (winnersToUpdate.length > 0) {
+        // Read all current surpluses in parallel
+        const reads = await Promise.all(
+          winnersToUpdate.map((b) =>
+            supabase
               .from("players")
-              .update({ total_surplus: playerData.total_surplus + resolvedBid.surplus })
-              .eq("id", resolvedBid.player_id);
-          }
-        }
+              .select("id, total_surplus")
+              .eq("id", b.player_id)
+              .single()
+          )
+        );
+
+        // Write all updates in parallel
+        await Promise.all(
+          winnersToUpdate.map((b, i) => {
+            const currentSurplus = reads[i]?.data?.total_surplus ?? 0;
+            return supabase
+              .from("players")
+              .update({ total_surplus: currentSurplus + b.surplus })
+              .eq("id", b.player_id);
+          })
+        );
       }
     } else {
       await supabase

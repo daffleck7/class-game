@@ -1,5 +1,8 @@
 /**
- * Load test: simulates 60 players through a full game cycle.
+ * Load test: simulates 60 players through a full Market Mayhem game.
+ *
+ * 3 phases (Monopoly, Oligopoly, Perfect Competition) x 3 rounds each.
+ * Players submit random bids between $0-$120 each round.
  *
  * Usage: node scripts/load-test.mjs [base_url]
  * Default base_url: http://localhost:3000
@@ -8,6 +11,7 @@
 const BASE = process.argv[2] || "http://localhost:3000";
 const NUM_PLAYERS = 60;
 const TEAMS = [1, 2, 4, 5, 6];
+const PHASE_LABELS = ["Monopoly", "Oligopoly", "Perfect Competition"];
 
 async function api(path, body) {
   const start = performance.now();
@@ -24,17 +28,9 @@ async function api(path, body) {
   return { data, elapsed };
 }
 
-function randomAllocation(budget) {
-  const cats = ["rd", "security", "compatibility", "marketing", "partnerships"];
-  const alloc = { rd: 0, security: 0, compatibility: 0, marketing: 0, partnerships: 0 };
-  let remaining = Math.floor(budget * 0.7); // invest ~70%
-  for (let i = 0; i < cats.length - 1; i++) {
-    const amount = Math.floor(Math.random() * (remaining / (cats.length - i)));
-    alloc[cats[i]] = amount;
-    remaining -= amount;
-  }
-  alloc[cats[cats.length - 1]] = remaining;
-  return alloc;
+function randomBid() {
+  // Random bid between $0.00 and $120.00
+  return Math.round(Math.random() * 12000) / 100;
 }
 
 async function runBatch(label, tasks) {
@@ -75,100 +71,78 @@ async function main() {
     players.push(r.data);
   }
 
-  // 3. Host starts → allocating
-  console.log("\n--- Allocation Phase ---");
-  const { elapsed: startMs } = await api(`/api/games/${roomCode}/advance`, {
-    host_token: hostToken,
-  });
-  console.log(`  Host start: ${startMs}ms`);
-
-  // 4. All 60 players allocate simultaneously
-  await runBatch(
-    `${NUM_PLAYERS} players allocating`,
-    players.map((p) => () =>
-      api(`/api/games/${roomCode}/allocate`, {
-        player_id: p.player_id,
-        allocations: randomAllocation(100),
-      })
-    )
+  // 3. Host starts game (lobby -> bidding)
+  console.log("\n--- Start Game ---");
+  const { data: startData, elapsed: startMs } = await api(
+    `/api/games/${roomCode}/advance`,
+    { host_token: hostToken }
   );
+  console.log(`  Host start: ${startMs}ms (supply: ${startData.supply})`);
 
-  // 5. Host starts events
-  const { elapsed: eventsMs } = await api(`/api/games/${roomCode}/advance`, {
-    host_token: hostToken,
-  });
-  console.log(`  Host start events: ${eventsMs}ms`);
+  // 4. Play through 3 phases x 3 rounds
+  for (let phase = 0; phase < 3; phase++) {
+    console.log(`\n========== Phase ${phase + 1}: ${PHASE_LABELS[phase]} ==========`);
 
-  // 6. Fire 5 events with reallocation between each
-  const { data: gameState } = await api(`/api/games/${roomCode}`);
-  const deckSize = gameState.event_deck.length;
-  console.log(`  Deck size: ${deckSize} events`);
+    for (let round = 0; round < 3; round++) {
+      console.log(`\n--- ${PHASE_LABELS[phase]} — Round ${round + 1} of 3 ---`);
 
-  for (let round = 0; round < deckSize; round++) {
-    console.log(`\n--- Round ${round + 1} of ${deckSize} ---`);
-
-    // Fire event
-    const { data: eventData, elapsed: fireMs } = await api(
-      `/api/games/${roomCode}/advance`,
-      { host_token: hostToken, action: "fire_event" }
-    );
-    console.log(`  Fire event: ${fireMs}ms — "${eventData.event?.title}" (isLast=${eventData.isLastEvent})`);
-
-    if (eventData.isLastEvent) {
-      // Finish game after last event
-      console.log("\n--- Finishing Game ---");
-      const { elapsed: finishMs } = await api(`/api/games/${roomCode}/advance`, {
-        host_token: hostToken,
-        action: "finish",
-      });
-      console.log(`  Finish: ${finishMs}ms`);
-      break;
-    }
-
-    // Open reallocation
-    const { elapsed: reallocMs } = await api(`/api/games/${roomCode}/advance`, {
-      host_token: hostToken,
-      action: "open_realloc",
-    });
-    console.log(`  Open realloc: ${reallocMs}ms`);
-
-    // All 60 players reallocate (skip if no cash)
-    let invested = 0;
-    let skipped = 0;
-    await runBatch(
-      `${NUM_PLAYERS} players reallocating`,
-      players.map((p) => async () => {
-        // Only invest 1 per category ($5 total) if player can afford it
-        const smallAlloc = { rd: 1, security: 1, compatibility: 1, marketing: 1, partnerships: 1 };
-        try {
-          const result = await api(`/api/games/${roomCode}/allocate`, {
+      // All players submit bids simultaneously
+      await runBatch(
+        `${NUM_PLAYERS} bids submitted`,
+        players.map((p) => () =>
+          api(`/api/games/${roomCode}/bid`, {
             player_id: p.player_id,
-            allocations: smallAlloc,
-          });
-          invested++;
-          return result;
-        } catch {
-          // Player likely has no cash — skip
-          skipped++;
-          return { data: null, elapsed: 0 };
-        }
-      })
-    );
-    if (skipped > 0) {
-      console.log(`  (${skipped} players skipped — no cash to invest)`);
+            bid: randomBid(),
+          })
+        )
+      );
+
+      // Host reveals bids
+      const { data: revealData, elapsed: revealMs } = await api(
+        `/api/games/${roomCode}/advance`,
+        { host_token: hostToken, action: "reveal" }
+      );
+      const result = revealData.result;
+      const winners = result.sorted_bids.filter((b) => b.won).length;
+      const losers = result.sorted_bids.filter((b) => !b.won).length;
+      console.log(`  Reveal: ${revealMs}ms — ${winners} winners, ${losers} losers`);
+      console.log(`  Producer surplus: $${result.producer_surplus} | Consumer surplus: $${result.consumer_surplus}`);
+
+      // Advance to next round, next phase, or finish
+      if (round < 2) {
+        // Next round within same phase
+        const { elapsed: nextMs } = await api(
+          `/api/games/${roomCode}/advance`,
+          { host_token: hostToken, action: "next_round" }
+        );
+        console.log(`  Next round: ${nextMs}ms`);
+      } else if (phase < 2) {
+        // Next phase
+        const { data: nextPhaseData, elapsed: nextMs } = await api(
+          `/api/games/${roomCode}/advance`,
+          { host_token: hostToken, action: "next_phase" }
+        );
+        console.log(`  Next phase: ${nextMs}ms (supply: ${nextPhaseData.supply})`);
+      } else {
+        // Finish game
+        const { elapsed: finishMs } = await api(
+          `/api/games/${roomCode}/advance`,
+          { host_token: hostToken, action: "finish" }
+        );
+        console.log(`  Finish game: ${finishMs}ms`);
+      }
     }
   }
 
-  // 7. Fetch final scores
-  console.log("\n--- Final Scores ---");
-  const { data: scores, elapsed: scoresMs } = await api(
-    `/api/games/${roomCode}/scores`
-  );
-  console.log(`  Scores endpoint: ${scoresMs}ms`);
-  console.log(`  Teams: ${scores.teamScores.length}`);
-  console.log(`  MVP: ${scores.mvp?.name} ($${scores.mvp?.score})`);
-  for (const team of scores.teamScores) {
-    console.log(`    Team ${team.team}: avg=$${team.averageScore} (${team.playerCount} players)`);
+  // 5. Fetch final game state
+  console.log("\n--- Final Results ---");
+  const { data: finalGame, elapsed: finalMs } = await api(`/api/games/${roomCode}`);
+  console.log(`  Game state fetch: ${finalMs}ms`);
+  console.log(`  Status: ${finalGame.status}`);
+  console.log(`  Phases completed: ${finalGame.phase_results.length}`);
+
+  for (const pr of finalGame.phase_results) {
+    console.log(`  ${PHASE_LABELS[pr.phase]}: producer=$${pr.producer_surplus} consumer=$${pr.consumer_surplus}`);
   }
 
   console.log("\n✅ Load test complete!\n");
