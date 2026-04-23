@@ -61,9 +61,9 @@ export default function PlayerReveal({
         <div className="card-framed p-6 text-center">
           <p className="text-cream-200/80 text-sm mb-1 tracking-widest uppercase">Your surplus this phase</p>
           <p className={`text-4xl font-bold ${surplus >= 0 ? "text-gold-400" : "text-wine-600"}`}>
-            ${surplus}
+            ${surplus.toFixed(2)}
           </p>
-          <p className="text-cream-300/60 text-sm mt-3">Running total: ${totalSurplus}</p>
+          <p className="text-cream-300/60 text-sm mt-3">Running total: ${totalSurplus.toFixed(2)}</p>
         </div>
       )}
 

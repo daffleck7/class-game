@@ -36,7 +36,7 @@ export function calculateTeamScores(
   for (const [team, data] of teamMap) {
     results.push({
       team,
-      averageScore: Math.round(data.total / data.count),
+      averageScore: parseFloat((data.total / data.count).toFixed(2)),
       playerCount: data.count,
     });
   }

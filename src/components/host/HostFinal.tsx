@@ -4,10 +4,15 @@ import { PHASE_LABELS } from "@/lib/auction-logic";
 import type { TeamScore } from "@/lib/game-logic";
 import { TEAM_NAMES, TEAM_COLORS } from "@/lib/teams";
 
+interface PhaseResultBid {
+  won: boolean;
+}
+
 interface PhaseResult {
   phase: number;
   producer_surplus: number;
   consumer_surplus: number;
+  bids: PhaseResultBid[];
 }
 
 interface PlayerRanking {
@@ -26,8 +31,17 @@ interface HostFinalProps {
  * Final results screen showing surplus comparison, individual and team leaderboards.
  */
 export default function HostFinal({ phaseResults, playerRankings, teamScores }: HostFinalProps) {
+  const avgResults = phaseResults.map((r) => {
+    const winnerCount = r.bids.filter((b) => b.won).length;
+    return {
+      phase: r.phase,
+      avgProducer: winnerCount > 0 ? r.producer_surplus / winnerCount : 0,
+      avgConsumer: winnerCount > 0 ? r.consumer_surplus / winnerCount : 0,
+    };
+  });
+
   const maxSurplus = Math.max(
-    ...phaseResults.flatMap((r) => [r.producer_surplus, r.consumer_surplus]),
+    ...avgResults.flatMap((r) => [r.avgProducer, r.avgConsumer]),
     1
   );
 
@@ -43,25 +57,29 @@ export default function HostFinal({ phaseResults, playerRankings, teamScores }: 
 
       {/* Surplus Comparison Chart */}
       <div className="w-full max-w-3xl">
-        <h2 className="text-xl font-semibold mb-4 text-center tracking-widest uppercase text-cream-400">Surplus by Market Structure</h2>
+        <h2 className="text-xl font-semibold mb-4 text-center tracking-widest uppercase text-cream-400">Avg Surplus per Unit Sold</h2>
         <div className="grid grid-cols-3 gap-6">
-          {phaseResults.map((result) => (
+          {avgResults.map((result) => (
             <div key={result.phase} className="card-framed p-4 text-center">
               <h3 className="font-semibold text-gold-400 mb-4 font-display">{PHASE_LABELS[result.phase]}</h3>
               <div className="flex justify-center gap-4 items-end h-40">
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-sm font-bold text-wine-600">${result.producer_surplus}</span>
+                  <span className="text-sm font-bold text-wine-600">
+                    ${result.avgProducer.toFixed(2)}
+                  </span>
                   <div
                     className="w-12 bar-producer"
-                    style={{ height: `${(result.producer_surplus / maxSurplus) * 120}px` }}
+                    style={{ height: `${(result.avgProducer / maxSurplus) * 120}px` }}
                   />
                   <span className="text-xs text-cream-400">Producer</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-sm font-bold text-gold-400">${result.consumer_surplus}</span>
+                  <span className="text-sm font-bold text-gold-400">
+                    ${result.avgConsumer.toFixed(2)}
+                  </span>
                   <div
                     className="w-12 bar-consumer"
-                    style={{ height: `${(result.consumer_surplus / maxSurplus) * 120}px` }}
+                    style={{ height: `${(result.avgConsumer / maxSurplus) * 120}px` }}
                   />
                   <span className="text-xs text-cream-400">Consumer</span>
                 </div>
@@ -92,7 +110,7 @@ export default function HostFinal({ phaseResults, playerRankings, teamScores }: 
                 <div className={`w-2 h-6 rounded ${TEAM_COLORS[player.team]}`} />
                 <span className="font-medium">{player.name}</span>
               </div>
-              <span className="text-xl font-bold">${player.total_surplus}</span>
+              <span className="text-xl font-bold">${player.total_surplus.toFixed(2)}</span>
             </div>
           ))}
         </div>
@@ -122,7 +140,7 @@ export default function HostFinal({ phaseResults, playerRankings, teamScores }: 
                   <span className="text-cream-400 text-sm ml-2">({ts.playerCount} players)</span>
                 </div>
               </div>
-              <span className="text-xl font-bold">${ts.averageScore} avg</span>
+              <span className="text-xl font-bold">${ts.averageScore.toFixed(2)} avg</span>
             </div>
           ))}
         </div>

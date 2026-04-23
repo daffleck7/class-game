@@ -31,7 +31,7 @@ export default function PlayerFinal({
 
       <div className="card-framed p-8 text-center min-w-[280px]">
         <p className="text-cream-400 text-sm mb-1 tracking-wider uppercase">{name} — Team {team}</p>
-        <p className="text-5xl font-bold mt-2">${totalSurplus}</p>
+        <p className="text-5xl font-bold mt-2">${totalSurplus.toFixed(2)}</p>
         <p className="text-cream-400 text-sm mt-1">Total Consumer Surplus</p>
       </div>
 

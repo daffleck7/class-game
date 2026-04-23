@@ -40,7 +40,7 @@ export default function TeamLeaderboard({ teamScores, highlight }: TeamLeaderboa
               />
             </div>
           </div>
-          <span className="text-xl font-bold w-16 text-right">${ts.averageScore}</span>
+          <span className="text-xl font-bold w-16 text-right">${ts.averageScore.toFixed(2)}</span>
         </div>
       ))}
     </div>
