@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PHASE_LABELS } from "@/lib/auction-logic";
+import { PHASE_LABELS, PHASE_DESCRIPTIONS } from "@/lib/auction-logic";
 
 interface PlayerBiddingProps {
   roomCode: string;
@@ -71,11 +71,19 @@ export default function PlayerBidding({
         <p className="text-cream-400 text-sm mt-2">
           {supply} units available for {playerCount} players
         </p>
+        {round === 0 && (
+          <p className="text-cream-500 text-xs mt-1">{PHASE_DESCRIPTIONS[phase]}</p>
+        )}
         {round < 2 && (
-          <p className="text-cream-500 text-xs mt-1">Price discovery round — results revealed after</p>
+          <p className="text-cream-500 text-xs mt-1">Practice round — no units are sold. Use it to test the market.</p>
         )}
         {round === 2 && (
           <p className="text-gold-400 text-xs mt-1 font-semibold">Final round — this bid counts!</p>
+        )}
+        {currentBid !== null && round > 0 && (
+          <p className="text-cream-400 text-xs mt-2">
+            Your bid from last round (${currentBid}) is locked in — update it or sit tight.
+          </p>
         )}
       </div>
 

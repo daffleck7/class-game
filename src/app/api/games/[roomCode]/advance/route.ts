@@ -82,19 +82,19 @@ export async function POST(
   if ((game.status === "bidding" || game.status === "revealing") && body.action === "reveal") {
     const { data: players } = await supabase
       .from("players")
-      .select("id, name, team, current_bid, last_bid, bid_updated_at")
+      .select("id, name, team, current_bid, bid_updated_at")
       .eq("game_id", game.id);
 
     if (!players) {
       return NextResponse.json({ error: "Failed to fetch players" }, { status: 500 });
     }
 
-    // Players who didn't submit a bid auto-repeat their last bid (or $0 if none)
+    // Players who never bid default to $0
     const bids = players.map((p) => ({
       player_id: p.id,
       name: p.name,
       team: p.team,
-      bid: p.current_bid ?? p.last_bid ?? 0,
+      bid: p.current_bid ?? 0,
       bid_updated_at: p.bid_updated_at,
     }));
 
@@ -162,22 +162,7 @@ export async function POST(
       return NextResponse.json({ error: "No more rounds in this phase" }, { status: 400 });
     }
 
-    // Save current bids so skipped players auto-repeat next round
-    const { data: currentPlayers } = await supabase
-      .from("players")
-      .select("id, current_bid")
-      .eq("game_id", game.id);
-
-    if (currentPlayers) {
-      await Promise.all(
-        currentPlayers.map((p) =>
-          supabase
-            .from("players")
-            .update({ last_bid: p.current_bid, current_bid: null, bid_updated_at: null })
-            .eq("id", p.id)
-        )
-      );
-    }
+    // Keep current_bid as-is so previous bids auto-carry to the next round
 
     await supabase
       .from("games")
@@ -212,7 +197,7 @@ export async function POST(
 
     await supabase
       .from("players")
-      .update({ current_bid: null, last_bid: null, bid_updated_at: null })
+      .update({ current_bid: null, bid_updated_at: null })
       .eq("game_id", game.id);
 
     await supabase

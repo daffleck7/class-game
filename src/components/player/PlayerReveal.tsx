@@ -47,7 +47,7 @@ export default function PlayerReveal({
           {won ? "IN" : "OUT"}
         </p>
         <p className="text-2xl text-cream-100/90 font-display-italic">
-          {won ? "Sold — you're in the buying zone!" : "Passed — out of the buying zone"}
+          {won ? "You're in the buying zone!" : "Out of the buying zone"}
         </p>
       </div>
 
@@ -60,29 +60,31 @@ export default function PlayerReveal({
       </div>
 
       {isFinalRound && (
-        <div className="card-framed p-6 text-center">
-          <p className="text-cream-200/80 text-sm mb-1 tracking-widest uppercase">Your surplus this phase</p>
-          <p className={`text-4xl font-bold ${surplus >= 0 ? "text-gold-400" : "text-wine-600"}`}>
-            ${surplus.toFixed(2)}
-          </p>
-        </div>
-      )}
-
-      <div className="flex gap-6">
-        <div className="card-framed p-4 text-center min-w-[120px]">
-          <p className="text-cream-200/80 text-xs mb-1 tracking-widest uppercase">Total Surplus</p>
-          <p className="text-2xl font-bold">${totalSurplus.toFixed(2)}</p>
-        </div>
-        {rank !== null && (
-          <div className="card-framed p-4 text-center min-w-[120px]">
-            <p className="text-cream-200/80 text-xs mb-1 tracking-widest uppercase">Your Rank</p>
-            <p className="text-2xl font-bold">
-              {rank === 1 && <span className="text-gold-400">★ </span>}
-              #{rank}
+        <>
+          <div className="card-framed p-6 text-center">
+            <p className="text-cream-200/80 text-sm mb-1 tracking-widest uppercase">Your surplus this phase</p>
+            <p className={`text-4xl font-bold ${surplus >= 0 ? "text-gold-400" : "text-wine-600"}`}>
+              ${surplus.toFixed(2)}
             </p>
           </div>
-        )}
-      </div>
+
+          <div className="flex gap-6">
+            <div className="card-framed p-4 text-center min-w-[120px]">
+              <p className="text-cream-200/80 text-xs mb-1 tracking-widest uppercase">Total Surplus</p>
+              <p className="text-2xl font-bold">${totalSurplus.toFixed(2)}</p>
+            </div>
+            {rank !== null && (
+              <div className="card-framed p-4 text-center min-w-[120px]">
+                <p className="text-cream-200/80 text-xs mb-1 tracking-widest uppercase">Your Rank</p>
+                <p className="text-2xl font-bold">
+                  {rank === 1 && <span className="text-gold-400">★ </span>}
+                  #{rank}
+                </p>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       <p className="text-cream-300/60 text-sm font-display-italic">Waiting for host to continue...</p>
     </div>

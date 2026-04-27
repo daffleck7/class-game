@@ -9,6 +9,13 @@
 /** Display labels for each market phase (index maps to phase number). */
 export const PHASE_LABELS = ["Monopoly", "Oligopoly", "Monopolistic Competition"] as const;
 
+/** Short descriptions explaining what changed in each phase. */
+export const PHASE_DESCRIPTIONS = [
+  "Very few units available — supply is scarce and competition is fierce.",
+  "Supply has increased — more units are up for grabs.",
+  "Supply exceeds demand — nearly everyone can win a unit.",
+] as const;
+
 /**
  * Supply ratios relative to player count for each phase.
  * Multiply by player count and round to get unit supply.

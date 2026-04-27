@@ -198,10 +198,22 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
 
   if (game.status === "lobby") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-6 gap-4">
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 gap-6 bg-texture">
         <h1 className="text-3xl font-bold font-display">Market Mayhem</h1>
         <p className="text-cream-400">Welcome, {playerName}! (Team {playerTeam})</p>
-        <p className="text-cream-500">Waiting for host to start...</p>
+        <div className="card-framed p-6 max-w-sm text-center space-y-3">
+          <p className="text-cream-400 text-sm tracking-widest uppercase font-semibold">How It Works</p>
+          <p className="text-cream-300 text-sm">
+            Each round, you submit a <span className="text-cream-100 font-semibold">sealed bid</span> to buy a unit worth <span className="text-cream-100 font-semibold">$100</span>.
+          </p>
+          <p className="text-cream-300 text-sm">
+            The highest bidders win. Your profit is <span className="text-cream-100 font-semibold">$100 minus your bid</span> — bid low to earn more, but bid too low and you lose.
+          </p>
+          <p className="text-cream-300 text-sm">
+            Each phase has 2 practice rounds to test the market, then 1 round that counts.
+          </p>
+        </div>
+        <p className="text-cream-500 text-sm">Waiting for host to start...</p>
       </div>
     );
   }
