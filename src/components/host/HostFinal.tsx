@@ -77,6 +77,16 @@ export default function HostFinal({ phaseResults, playerRankings, teamScores }: 
             <p className="text-cream-400 text-xs">{teamScores[0].playerCount} players</p>
           </div>
         )}
+        {playerRankings.length > 1 && (
+          <div className="card-ornate p-8 text-center flex-1 opacity-80">
+            <p className="text-wine-600 text-4xl mb-2">&#x1F4B8;</p>
+            <p className="text-cream-400 text-sm tracking-widest uppercase mb-1">Worst Bidder</p>
+            <p className="text-3xl font-bold font-display text-wine-600">{playerRankings[playerRankings.length - 1].name}</p>
+            <div className={`w-4 h-4 rounded-full mx-auto mt-2 ${TEAM_COLORS[playerRankings[playerRankings.length - 1].team]}`} />
+            <p className="text-2xl font-bold mt-2">${playerRankings[playerRankings.length - 1].total_surplus.toFixed(2)}</p>
+            <p className="text-cream-400 text-xs">total surplus</p>
+          </div>
+        )}
       </div>
 
       <div className="divider-ornate w-full max-w-3xl">
