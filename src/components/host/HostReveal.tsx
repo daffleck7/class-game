@@ -52,8 +52,6 @@ export default function HostReveal({
           const lowestWinningBid = winners.length > 0
             ? winners[winners.length - 1].bid
             : null;
-          const isMarginIndex = winners.length > 0 ? winners.length - 1 : -1;
-
           return (
             <div className="card-ornate overflow-hidden">
               {sortedBids.map((bid, index) => (
@@ -62,6 +60,9 @@ export default function HostReveal({
                     <div className="buy-line">
                       <span className="text-cream-100 text-xs font-semibold uppercase tracking-wider">
                         Buy Line — {supply} units available
+                        {!isFinalRound && lowestWinningBid !== null && (
+                          <> · Clearing price: <span className="text-xl font-bold align-middle">${lowestWinningBid}</span></>
+                        )}
                       </span>
                     </div>
                   )}
@@ -83,11 +84,7 @@ export default function HostReveal({
                             <span className="text-gold-400 text-sm">+${bid.surplus.toFixed(2)} surplus</span>
                           )}
                         </>
-                      ) : (
-                        index === isMarginIndex && lowestWinningBid !== null && (
-                          <span className="text-xl font-bold">${lowestWinningBid}</span>
-                        )
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 </div>

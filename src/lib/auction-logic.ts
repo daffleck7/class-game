@@ -7,7 +7,7 @@
  */
 
 /** Display labels for each market phase (index maps to phase number). */
-export const PHASE_LABELS = ["Monopoly", "Oligopoly", "Perfect Competition"] as const;
+export const PHASE_LABELS = ["Monopoly", "Oligopoly", "Monopolistic Competition"] as const;
 
 /**
  * Supply ratios relative to player count for each phase.
@@ -18,7 +18,7 @@ export const PHASE_SUPPLY_RATIOS = [0.33, 0.83, 1.2] as const;
 /**
  * Calculate the number of units available in a given phase.
  *
- * @param phase - Phase index (0 = Monopoly, 1 = Oligopoly, 2 = Perfect Competition).
+ * @param phase - Phase index (0 = Monopoly, 1 = Oligopoly, 2 = Monopolistic Competition).
  * @param playerCount - Total number of active players.
  * @returns Number of units supplied, always at least 1.
  */
@@ -32,6 +32,8 @@ export interface BidInput {
   name: string;
   team: number;
   bid: number;
+  /** ISO timestamp of when the bid was submitted, used for tie-breaking. */
+  bid_updated_at?: string | null;
 }
 
 /** A bid after round resolution, enriched with win/surplus outcome. */
@@ -69,10 +71,14 @@ export interface RoundResult {
  * @returns A RoundResult containing sorted resolved bids and surplus totals.
  */
 export function resolveRound(bids: BidInput[], supply: number): RoundResult {
-  // Sort by bid descending, with random tiebreaker for equal bids
-  const shuffled = [...bids].sort(() => Math.random() - 0.5);
-  const sorted_bids: ResolvedBid[] = shuffled
-    .sort((a, b) => b.bid - a.bid)
+  // Sort by bid descending; ties broken by earliest submission time
+  const sorted_bids: ResolvedBid[] = [...bids]
+    .sort((a, b) => {
+      if (b.bid !== a.bid) return b.bid - a.bid;
+      const timeA = a.bid_updated_at ? new Date(a.bid_updated_at).getTime() : Infinity;
+      const timeB = b.bid_updated_at ? new Date(b.bid_updated_at).getTime() : Infinity;
+      return timeA - timeB;
+    })
     .map((bid, index) => {
       const won = index < supply;
       const surplus = won ? 100 - bid.bid : 0;

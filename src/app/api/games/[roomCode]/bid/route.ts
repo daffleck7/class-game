@@ -49,7 +49,7 @@ export async function POST(
 
   const { data: player, error: playerError } = await supabase
     .from("players")
-    .update({ current_bid: body.bid })
+    .update({ current_bid: body.bid, bid_updated_at: new Date().toISOString() })
     .eq("id", body.player_id)
     .eq("game_id", game.id)
     .select()

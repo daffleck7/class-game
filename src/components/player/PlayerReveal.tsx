@@ -9,6 +9,7 @@ interface PlayerRevealProps {
   bid: number;
   surplus: number;
   totalSurplus: number;
+  rank: number | null;
   isFinalRound: boolean;
 }
 
@@ -23,6 +24,7 @@ export default function PlayerReveal({
   bid,
   surplus,
   totalSurplus,
+  rank,
   isFinalRound,
 }: PlayerRevealProps) {
   return (
@@ -63,9 +65,24 @@ export default function PlayerReveal({
           <p className={`text-4xl font-bold ${surplus >= 0 ? "text-gold-400" : "text-wine-600"}`}>
             ${surplus.toFixed(2)}
           </p>
-          <p className="text-cream-300/60 text-sm mt-3">Running total: ${totalSurplus.toFixed(2)}</p>
         </div>
       )}
+
+      <div className="flex gap-6">
+        <div className="card-framed p-4 text-center min-w-[120px]">
+          <p className="text-cream-200/80 text-xs mb-1 tracking-widest uppercase">Total Surplus</p>
+          <p className="text-2xl font-bold">${totalSurplus.toFixed(2)}</p>
+        </div>
+        {rank !== null && (
+          <div className="card-framed p-4 text-center min-w-[120px]">
+            <p className="text-cream-200/80 text-xs mb-1 tracking-widest uppercase">Your Rank</p>
+            <p className="text-2xl font-bold">
+              {rank === 1 && <span className="text-gold-400">★ </span>}
+              #{rank}
+            </p>
+          </div>
+        )}
+      </div>
 
       <p className="text-cream-300/60 text-sm font-display-italic">Waiting for host to continue...</p>
     </div>

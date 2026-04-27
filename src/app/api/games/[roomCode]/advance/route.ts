@@ -71,6 +71,7 @@ export async function POST(
         current_phase: 0,
         current_round: 0,
         round_supply: supply,
+        player_count: playerCount,
       })
       .eq("id", game.id);
 
@@ -81,37 +82,23 @@ export async function POST(
   if ((game.status === "bidding" || game.status === "revealing") && body.action === "reveal") {
     const { data: players } = await supabase
       .from("players")
-      .select("id, name, team, current_bid")
+      .select("id, name, team, current_bid, last_bid, bid_updated_at")
       .eq("game_id", game.id);
 
     if (!players) {
       return NextResponse.json({ error: "Failed to fetch players" }, { status: 500 });
     }
 
-    // Players who didn't submit a bid are excluded — they can't win
-    const bidders = players.filter((p) => p.current_bid !== null);
-    const nonBidders = players.filter((p) => p.current_bid === null);
-
-    const bids = bidders.map((p) => ({
+    // Players who didn't submit a bid auto-repeat their last bid (or $0 if none)
+    const bids = players.map((p) => ({
       player_id: p.id,
       name: p.name,
       team: p.team,
-      bid: p.current_bid as number,
+      bid: p.current_bid ?? p.last_bid ?? 0,
+      bid_updated_at: p.bid_updated_at,
     }));
 
     const result = resolveRound(bids, game.round_supply);
-
-    // Append non-bidders as losers at the bottom of the list
-    for (const p of nonBidders) {
-      result.sorted_bids.push({
-        player_id: p.id,
-        name: p.name,
-        team: p.team,
-        bid: 0,
-        won: false,
-        surplus: 0,
-      });
-    }
 
     // If this is round 3 (index 2) and first reveal (not re-reveal), store phase results and update surplus
     const isReReveal = game.status === "revealing";
@@ -175,10 +162,22 @@ export async function POST(
       return NextResponse.json({ error: "No more rounds in this phase" }, { status: 400 });
     }
 
-    await supabase
+    // Save current bids so skipped players auto-repeat next round
+    const { data: currentPlayers } = await supabase
       .from("players")
-      .update({ current_bid: null })
+      .select("id, current_bid")
       .eq("game_id", game.id);
+
+    if (currentPlayers) {
+      await Promise.all(
+        currentPlayers.map((p) =>
+          supabase
+            .from("players")
+            .update({ last_bid: p.current_bid, current_bid: null, bid_updated_at: null })
+            .eq("id", p.id)
+        )
+      );
+    }
 
     await supabase
       .from("games")
@@ -213,7 +212,7 @@ export async function POST(
 
     await supabase
       .from("players")
-      .update({ current_bid: null })
+      .update({ current_bid: null, last_bid: null, bid_updated_at: null })
       .eq("game_id", game.id);
 
     await supabase

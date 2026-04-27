@@ -14,6 +14,7 @@ interface Game {
   current_phase: number;
   current_round: number;
   round_supply: number;
+  player_count: number;
   phase_results: Array<{
     phase: number;
     bids: Array<{ player_id: string; won: boolean; surplus: number; bid: number }>;
@@ -44,7 +45,6 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
   });
   const [currentBid, setCurrentBid] = useState<number | null>(null);
   const [totalSurplus, setTotalSurplus] = useState(0);
-  const [playerCount, setPlayerCount] = useState(0);
   const [revealInfo, setRevealInfo] = useState<{ won: boolean; bid: number; surplus: number } | null>(null);
   const [rank, setRank] = useState<number | null>(null);
   const [teamRank, setTeamRank] = useState<number | null>(null);
@@ -73,16 +73,6 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
       setTotalSurplus(data.total_surplus);
     }
   }, [playerId, game?.id]);
-
-  const fetchPlayerCount = useCallback(async () => {
-    if (!game?.id) return;
-    const supabase = getSupabaseBrowser();
-    const { data } = await supabase
-      .from("players")
-      .select("id")
-      .eq("game_id", game.id);
-    if (data) setPlayerCount(data.length);
-  }, [game?.id]);
 
   const fetchRevealPosition = useCallback(async () => {
     if (!game?.id || !playerId) return;
@@ -132,7 +122,6 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
   useEffect(() => {
     if (!game?.id) return;
     fetchPlayerData();
-    fetchPlayerCount();
 
     const supabase = getSupabaseBrowser();
 
@@ -159,13 +148,14 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [game?.id, playerId, fetchPlayerData, fetchPlayerCount]);
+  }, [game?.id, playerId, fetchPlayerData]);
 
   // Handle state transitions
   useEffect(() => {
     if (game?.status === "revealing") {
       fetchRevealPosition();
       fetchPlayerData();
+      fetchRanks();
     }
     if (game?.status === "bidding") {
       setRevealInfo(null);
@@ -224,7 +214,7 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
         phase={game.current_phase}
         round={game.current_round}
         supply={game.round_supply}
-        playerCount={playerCount}
+        playerCount={game?.player_count ?? 0}
         currentBid={currentBid}
         onBidSubmitted={(bid) => setCurrentBid(bid)}
       />
@@ -250,6 +240,7 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
               bid={myBid.bid}
               surplus={myBid.surplus}
               totalSurplus={totalSurplus}
+              rank={rank}
               isFinalRound={true}
             />
           );
@@ -267,6 +258,7 @@ export default function PlayPage({ params }: { params: Promise<{ roomCode: strin
           bid={revealInfo.bid}
           surplus={revealInfo.surplus}
           totalSurplus={totalSurplus}
+          rank={rank}
           isFinalRound={isFinalRound}
         />
       );

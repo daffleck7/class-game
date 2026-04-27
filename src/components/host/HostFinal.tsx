@@ -55,6 +55,34 @@ export default function HostFinal({ phaseResults, playerRankings, teamScores }: 
         </div>
       </div>
 
+      {/* Winner Spotlight */}
+      <div className="flex gap-8 w-full max-w-3xl justify-center">
+        {playerRankings.length > 0 && (
+          <div className="card-ornate p-8 text-center flex-1">
+            <p className="text-gold-400 text-4xl mb-2">&#x1F3C6;</p>
+            <p className="text-cream-400 text-sm tracking-widest uppercase mb-1">Top Bidder</p>
+            <p className="text-3xl font-bold font-display text-gold-400">{playerRankings[0].name}</p>
+            <div className={`w-4 h-4 rounded-full mx-auto mt-2 ${TEAM_COLORS[playerRankings[0].team]}`} />
+            <p className="text-2xl font-bold mt-2">${playerRankings[0].total_surplus.toFixed(2)}</p>
+            <p className="text-cream-400 text-xs">total surplus</p>
+          </div>
+        )}
+        {teamScores.length > 0 && (
+          <div className="card-ornate p-8 text-center flex-1">
+            <p className="text-gold-400 text-4xl mb-2">&#x1F3C6;</p>
+            <p className="text-cream-400 text-sm tracking-widest uppercase mb-1">Winning Team</p>
+            <p className="text-3xl font-bold font-display text-gold-400">{TEAM_NAMES[teamScores[0].team]}</p>
+            <div className={`w-4 h-4 rounded-full mx-auto mt-2 ${TEAM_COLORS[teamScores[0].team]}`} />
+            <p className="text-2xl font-bold mt-2">${teamScores[0].averageScore.toFixed(2)} avg</p>
+            <p className="text-cream-400 text-xs">{teamScores[0].playerCount} players</p>
+          </div>
+        )}
+      </div>
+
+      <div className="divider-ornate w-full max-w-3xl">
+        <span className="text-gold-500 text-xs">◆</span>
+      </div>
+
       {/* Surplus Comparison Chart */}
       <div className="w-full max-w-3xl">
         <h2 className="text-xl font-semibold mb-4 text-center tracking-widest uppercase text-cream-400">Avg Surplus per Unit Sold</h2>
