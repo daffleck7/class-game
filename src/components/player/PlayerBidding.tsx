@@ -74,9 +74,6 @@ export default function PlayerBidding({
         {round === 0 && (
           <p className="text-cream-500 text-xs mt-1">{PHASE_DESCRIPTIONS[phase]}</p>
         )}
-        {round < 2 && (
-          <p className="text-cream-500 text-xs mt-1">Practice round — no units are sold. Use it to test the market.</p>
-        )}
         {round === 2 && (
           <p className="text-gold-400 text-xs mt-1 font-semibold">Final round — this bid counts!</p>
         )}
