@@ -60,7 +60,7 @@ export default function HostReveal({
                     <div className="buy-line">
                       <span className="text-cream-100 text-xs font-semibold uppercase tracking-wider">
                         Buy Line — {supply} units available
-                        {!isFinalRound && lowestWinningBid !== null && (
+                        {lowestWinningBid !== null && (
                           <> · Clearing price: <span className="text-xl font-bold align-middle">${lowestWinningBid}</span></>
                         )}
                       </span>
@@ -90,9 +90,12 @@ export default function HostReveal({
                 </div>
               ))}
               {sortedBids.length <= supply && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-gold-600/30">
-                  <span className="text-gold-400 text-xs font-semibold uppercase tracking-wider">
-                    All bids win — supply exceeds demand
+                <div className="buy-line">
+                  <span className="text-cream-100 text-xs font-semibold uppercase tracking-wider">
+                    Buy Line — {supply} units available
+                    {sortedBids.length > 0 && (
+                      <> · Clearing price: <span className="text-xl font-bold align-middle">${sortedBids[sortedBids.length - 1].bid}</span></>
+                    )}
                   </span>
                 </div>
               )}
